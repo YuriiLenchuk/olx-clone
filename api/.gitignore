@@ -20,3 +20,6 @@ npm-debug.log*
 
 # link str
 mongo.js
+
+# script
+./scripts/seed_categories.js

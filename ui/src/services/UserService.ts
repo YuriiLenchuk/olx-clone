@@ -1,5 +1,5 @@
 import api from "@/api";
-import ErrorHandler from "@/app/services/ErrorHandler";
+import ErrorHandler from "@/services/ErrorHandler";
 
 interface User {
     username: string;

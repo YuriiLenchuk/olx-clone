@@ -14,6 +14,9 @@ const corsOptions = {
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
+const categoryRouter = require('./routes/category');
+const ImgRouter = require('./routes/image');
+const ItemRouter = require('./routes/item');
 
 const app = express();
 
@@ -32,6 +35,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/customer', usersRouter);
 app.use('/auth', authRouter);
+app.use('/category', categoryRouter);
+app.use('/img', ImgRouter);
+app.use('/item', ItemRouter);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

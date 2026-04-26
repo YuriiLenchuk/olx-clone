@@ -4,15 +4,86 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9ad9d9ce-1ebf-40a6-93a7-6953fbce361b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/app/services/ErrorHandler.ts" afterDir="false" />
+    <list default="true" id="62621f5a-b3d4-44d2-ab93-1184b86497f3" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../api/assets/arenda-prokat.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/cybersport.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/detskiy-mir.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/dom-i-sad.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/elektronika.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/hobbi-otdyh-i-sport.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/moda-i-stil.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/nedvizhimost.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/obmen-barter.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/olx_business.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/olx_parts.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/otdam-darom.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/rabota.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/transport.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/uslugi.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/zapchasti-dlya-transporta.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/zhivotnye.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/assets/zhytlo-podobovo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/controllers/categories.controller.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/controllers/gridfsUploadController.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/controllers/image.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/controllers/item.controller.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/middleware/uploadMiddleware.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/models/category_model.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/models/item_model.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/routes/category.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/routes/image.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/routes/item.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/scripts/seed_categories.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Utils/DateStr.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(main)/[...category]/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(main)/[...category]/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(main)/obyava/[id]/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/not-found.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/CustomSelect/CustomSelect.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/CustomSelect/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/InfiniteScroll/InfiniteScroll.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/InfiniteScroll/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/ItemCard/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/ItemCard/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/ItemCardMenu/ItemCardMenu.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/ItemCardMenu/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/categories/categories.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/categories/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/categoryCard/categoryCard.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/categoryCard/styled.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/subcategory/subcategoryPanel.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/vip-adv/vip-adv.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/icons/ArrowDown.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/icons/Check.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/icons/Like.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/services/CategoryService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../api/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/bin/www" beforeDir="false" afterPath="$PROJECT_DIR$/../api/bin/www" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/config/db.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/config/db.config.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../api/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../api/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../api/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../api/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Utils/auth.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/next.config.mjs" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.mjs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(auth)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/layout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(auth)/registration/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/registration/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/services/UserService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/UserService.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/middleware.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(main)/home/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/home/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(main)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/cart/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/cart/cart.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/header/header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/header/ico.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/ico.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/header/ico2.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/ico2.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/header/img.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/img.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/header/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/styled.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/search/search.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/search/search.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/search/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/search/styled.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/services/ErrorHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/ErrorHandler.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/services/UserService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/UserService.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,39 +101,39 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="MarkdownSettingsMigration">
-    <option name="stateVersion" value="1" />
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 1
 }</component>
-  <component name="ProjectId" id="2jyTFWjijM6kc4PW08hgargUqQp" />
+  <component name="ProjectId" id="2yHUtrp3wl9kTm4XmO0PXp8A1uq" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\poilk\\Desktop\\web\\olx\\ui\\node_modules\\typescript\\lib&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\poilk\\Desktop\\web\\olx-clone\\ui\\node_modules\\typescript\\lib&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\poilk.LENOVO_LEGION\Desktop\web\olx\ui\src\app\(main)" />
-      <recent name="C:\Users\poilk.LENOVO_LEGION\Desktop\web\olx\ui\src\app\(main)\home" />
-      <recent name="C:\Users\poilk.LENOVO_LEGION\Desktop\web\olx\ui\src\app\(auth)\registration" />
-      <recent name="C:\Users\poilk.LENOVO_LEGION\Desktop\web\olx\ui\src\app\components\header" />
-      <recent name="C:\Users\poilk.LENOVO_LEGION\Desktop\web\olx\ui\src\app\components" />
+      <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src" />
+      <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\public" />
+      <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src\components" />
+      <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src\app\(main)" />
+      <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src\app\(main)\category" />
     </key>
   </component>
   <component name="SharedIndexes">
@@ -75,26 +146,28 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="9ad9d9ce-1ebf-40a6-93a7-6953fbce361b" name="Changes" comment="" />
-      <created>1722358214537</created>
+      <changelist id="62621f5a-b3d4-44d2-ab93-1184b86497f3" name="Changes" comment="" />
+      <created>1749491210316</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1722358214537</updated>
-      <workItem from="1722358216655" duration="2820000" />
-      <workItem from="1722417923124" duration="1384000" />
-      <workItem from="1722438712809" duration="5533000" />
-      <workItem from="1723466182197" duration="3793000" />
-      <workItem from="1726393217529" duration="607000" />
-      <workItem from="1726590125039" duration="2808000" />
-      <workItem from="1729455980345" duration="646000" />
-      <workItem from="1732722235406" duration="1888000" />
-      <workItem from="1733586664587" duration="4982000" />
-      <workItem from="1733758954758" duration="1026000" />
-      <workItem from="1733759999664" duration="8067000" />
-      <workItem from="1734888423256" duration="3740000" />
-      <workItem from="1740654480960" duration="2295000" />
-      <workItem from="1747927535058" duration="79000" />
-      <workItem from="1747929809949" duration="144000" />
+      <updated>1749491210316</updated>
+      <workItem from="1749491211902" duration="29000" />
+      <workItem from="1749491252042" duration="29000" />
+      <workItem from="1750248412983" duration="5880000" />
+      <workItem from="1752775937715" duration="2992000" />
+      <workItem from="1752834621771" duration="1247000" />
+      <workItem from="1752836933615" duration="4952000" />
+      <workItem from="1752842047180" duration="80000" />
+      <workItem from="1752943358012" duration="3825000" />
+      <workItem from="1753359489663" duration="2982000" />
+      <workItem from="1754669022216" duration="2633000" />
+      <workItem from="1756571002706" duration="4191000" />
+      <workItem from="1757077550870" duration="310000" />
+      <workItem from="1757078339924" duration="3671000" />
+      <workItem from="1757160151629" duration="1394000" />
+      <workItem from="1757161570195" duration="23071000" />
+      <workItem from="1757781798560" duration="1875000" />
+      <workItem from="1758372861952" duration="14671000" />
     </task>
     <servers />
   </component>

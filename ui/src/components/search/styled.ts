@@ -28,7 +28,7 @@ export const StyledSearchInput = styled.input `
 
 export const StyledSearchForm = styled.form `
 width: 100%;
-    padding: 40px 120px;
+    padding: 30px 120px;
     display: flex;
 `
 

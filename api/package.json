@@ -16,15 +16,19 @@
     "dotenv": "^16.0.3",
     "express": "~4.16.1",
     "express-validator": "^7.2.0",
+    "gridfs-stream": "^1.1.1",
     "hbs": "~4.0.4",
     "http-errors": "~1.6.3",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.6.1",
-    "mongoose": "^7.0.3",
+    "mongodb": "^6.18.0",
+    "mongoose": "^8.16.4",
     "morgan": "~1.9.1",
-    "punycode": "^2.3.1"
+    "multer": "^2.0.2",
+    "punycode": "^2.3.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/multer": "^2.0.0",
     "cross-env": "^7.0.3",
     "debug": "~2.6.9",
     "eslint": "^8.34.0",

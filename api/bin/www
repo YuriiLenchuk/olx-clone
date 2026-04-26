@@ -6,12 +6,12 @@
 const app = require('../app');
 const debug = require('debug')('express-app:server');
 const http = require('http');
-const connectToDb = require('../config/db.config');
+const { connectToDb } = require('../config/db.config');
 
 /**
  * Get port from environment and store in Express.
  */
-const port = normalizePort('3001');
+const port = normalizePort('3005');
 app.set('port', port);
 
 /**

@@ -1,5 +1,5 @@
 "use client"
-import UserService from "@/app/services/UserService";
+import UserService from "@/services/UserService";
 import { useState } from "react";
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation";
