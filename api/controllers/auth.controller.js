@@ -20,6 +20,8 @@ const getSafeUser = user => ({
     city: user.city,
     avatar: user.avatar,
     roles: user.roles,
+    averageRating: user.averageRating || 0,
+    reviewsCount: user.reviewsCount || 0,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
 });

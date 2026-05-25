@@ -1,9 +1,10 @@
 "use client"
 import UserService from "@/services/UserService";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation";
 import {ForgetPasswordInput, FormButton, SubmitButton, WrapperForm, WrapperFormContainer, WrapperInput} from './styled';
+import Cookies from "js-cookie";
 
 type Inputs = {
     user: string
@@ -15,22 +16,27 @@ interface User {
 }
 
 export default function Auth() {
+    useEffect(() => {
+        if (Cookies.get("authToken")) return router.push("/auth/me");
+    }, []);
+
     const [variant, setVariant] = useState<string>('isRegister');
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const onClick = (data:User) => {
-        console.log("onClick");
         switch (variant) {
             case 'isRegister': UserService.registration({username: data.user, password: data.password}).then(r => {
                 document.cookie = `authToken=${r.token};`
-                return router.push("/home");
+                return router.push("/auth/me");
             }); break;
             case 'isLogin': UserService.login({username: data.user, password: data.password}).then(r => {
-                console.log(1234)
-                document.cookie = `authToken=${r.token};`
-                return router.push("/home");
+                Cookies.set('authToken', r.token, {
+                    expires: 1,
+                    sameSite: 'lax',
+                });
+
+                return router.push('/auth/me');
             }).catch(e => {
-                console.log(123)
                 setError(e?.response?.data)
             }); break;
         }
