@@ -6,6 +6,7 @@ const ItemsGrid = styled.div`
     flex-direction: column;
     justify-content: center;
     padding: 0 120px;
+    gap: 10px;
 `
 
 export {

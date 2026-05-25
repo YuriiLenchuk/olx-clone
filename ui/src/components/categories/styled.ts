@@ -1,24 +1,42 @@
-'use client'
+'use client';
 
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const StyledCategories = styled.article`
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 46px 24px 70px;
+
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0 60px;
-    padding: 60px 0;
-    h2{
-        margin-bottom: 56px;
-        font-size: 32px;
-        font-weight: 700;
+
+    h2 {
+        margin-bottom: 14px;
+
+        color: var(--text);
+        font-size: 38px;
+        line-height: 1.1;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        text-align: center;
     }
-`
+`;
 
 export const StyledCategoriesList = styled.div`
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    grid-column-gap: 16px;
     width: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 136px);
+    justify-content: center;
     align-items: stretch;
-`
+    gap: 16px;
+
+    @media (max-width: 520px) {
+        grid-template-columns: repeat(2, 136px);
+    }
+
+    @media (max-width: 340px) {
+        grid-template-columns: 136px;
+    }
+`;

@@ -1,112 +1,261 @@
-"use client"
+'use client';
 
-import styled from "styled-components";
-import Link from "next/link";
+import styled from 'styled-components';
+import Link from 'next/link';
 
 export const WrapperFormContainer = styled.div`
+    width: min(440px, calc(100% - 32px));
+    margin: 54px auto 80px;
+    padding: 18px 28px 30px;
+
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    max-width: 400px;
-    width: 100%;
-    height: auto;
-    background: #fff;
-    padding: 0 32px;
-    border-radius: 4px;
-    >div{
+
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 24px;
+    box-shadow: 0 22px 55px rgba(35, 45, 39, 0.12);
+    backdrop-filter: blur(14px);
+
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -90px;
+        right: -90px;
+
+        width: 180px;
+        height: 180px;
+
+        background: radial-gradient(
+                circle,
+                rgba(242, 189, 87, 0.45),
+                transparent 68%
+        );
+        pointer-events: none;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        left: -80px;
+        bottom: -80px;
+
+        width: 170px;
+        height: 170px;
+
+        background: radial-gradient(
+                circle,
+                rgba(63, 111, 88, 0.16),
+                transparent 68%
+        );
+        pointer-events: none;
+    }
+
+    > div {
+        position: relative;
+        z-index: 1;
+
         width: 100%;
+        min-height: 54px;
+        padding: 5px;
+
         display: flex;
         justify-content: center;
-        height: 56px;
+        gap: 6px;
+
+        background: #f6f2ea;
+        border: 1px solid var(--border, #e8e1d6);
+        border-radius: 18px;
     }
-`
+
+    @media (max-width: 520px) {
+        margin-top: 28px;
+        padding: 16px 18px 24px;
+        border-radius: 22px;
+    }
+`;
 
 export const FormButton = styled.button<{ $active: boolean }>`
-    box-sizing: border-box;
     width: 50%;
-    height: 100%;
-    background: none;
-    border: none;
-    margin-top: 8px;
-    padding-bottom: 1px;
-    border-bottom: ${props => props.$active ? "3px solid black" : "0.1px solid black"};
-    &:hover{
-        box-sizing: border-box;
-        padding-bottom: 0;
-        border-bottom: 4px solid #002F34;
+    min-height: 44px;
+    padding: 0 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: ${({ $active }) =>
+            $active ? 'var(--primary-dark, #2d4f3f)' : 'var(--muted, #6f7a73)'};
+    background: ${({ $active }) => ($active ? '#ffffff' : 'transparent')};
+    border: 0;
+    border-radius: 14px;
+    box-shadow: ${({ $active }) =>
+            $active ? '0 10px 24px rgba(35, 45, 39, 0.08)' : 'none'};
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.2;
+
+    transition: 0.16s ease;
+
+    &:hover {
+        color: var(--primary-dark, #2d4f3f);
+        background: ${({ $active }) => ($active ? '#ffffff' : 'rgba(255, 255, 255, 0.6)')};
     }
-`
+
+    &:active {
+        transform: translateY(1px);
+    }
+`;
 
 export const WrapperForm = styled.form`
-    margin: 16px 0 32px 0;
-    display: flex;
-    justify-content: center;
-    height: auto;
-    flex-direction: column;
+    position: relative;
+    z-index: 1;
+
     width: 100%;
-`
+    margin: 24px 0 0;
+
+    display: flex;
+    flex-direction: column;
+`;
 
 export const WrapperInput = styled.div`
     display: flex;
     flex-direction: column;
-    margin-bottom: 16px; !important;
-    >label{
-        font-size: 14px;
+    margin-bottom: 17px;
+
+    > label {
         margin-bottom: 8px;
+
+        color: var(--text, #1f2a24);
+        font-size: 14px;
+        line-height: 1.25;
+        font-weight: 800;
     }
-    >input{
-        height: 48px;
-        border: 2px solid transparent;
-        color: #002F34;
-        background: #F2F4F5;
-        padding: 14px 16px;
-        margin-bottom: 6px;
-        border-radius: 4px;
-        &:focus{
-            outline: none;
-            border: 1px solid transparent;;
-            border-bottom: black 1px solid;
+
+    > input {
+        width: 100%;
+        height: 50px;
+        padding: 0 15px;
+
+        color: var(--text, #1f2a24);
+        background: #fbfaf7;
+        border: 1px solid var(--border, #e8e1d6);
+        border-radius: 15px;
+        outline: none;
+
+        font-size: 15px;
+        font-weight: 600;
+
+        transition: 0.16s ease;
+
+        &::placeholder {
+            color: #a19a8e;
+        }
+
+        &:hover {
+            border-color: rgba(63, 111, 88, 0.3);
+        }
+
+        &:focus {
+            background: #ffffff;
+            border-color: rgba(63, 111, 88, 0.58);
+            box-shadow: 0 0 0 4px rgba(63, 111, 88, 0.11);
         }
     }
-    >div{
+
+    > div {
+        margin-top: 6px;
+
         display: flex;
         flex-direction: column;
-        >p{
+        gap: 4px;
+
+        > p {
+            color: var(--muted, #6f7a73);
             font-size: 12px;
+            line-height: 1.45;
+            font-weight: 600;
         }
-        >span{
+
+        > span {
+            color: var(--muted, #6f7a73);
             font-size: 12px;
-            >span{
-                font-size: 18px; !important;
-                font-weight: 500;
+            line-height: 1.45;
+            font-weight: 600;
+
+            > span {
+                color: var(--primary-dark, #2d4f3f);
+                font-size: 15px;
+                font-weight: 900;
             }
         }
     }
-`
+
+    > span,
+    > p {
+        margin-top: 6px;
+
+        color: var(--danger, #d45b5b);
+        font-size: 12px;
+        line-height: 1.35;
+        font-weight: 800;
+    }
+`;
 
 export const SubmitButton = styled.input`
-    margin-top: 32px;
-    border: 4px solid #002F34;
-    border-radius: 4px;
-    box-sizing: border-box;
+    width: 100%;
+    height: 52px;
+    margin-top: 20px;
+    padding: 0 24px;
+
+    color: #ffffff;
+    background: var(--primary, #3f6f58);
+    border: 1px solid var(--primary, #3f6f58);
+    border-radius: 16px;
+    box-shadow: 0 14px 30px rgba(63, 111, 88, 0.24);
+
     cursor: pointer;
-    font-size: 16px;
-    font-weight: 700;
-    height: 48px;
-    letter-spacing: 0.7px;
-    line-height: 20px;
-    padding: 0 32px;
-    text-align: center;
-    white-space: nowrap;
-    background: #002F34;
-    color: #FFFFFF;
-    &:hover{
-        background: white;
-        color: #002F34;
+
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+
+    transition: 0.18s ease;
+
+    &:hover {
+        background: var(--primary-dark, #2d4f3f);
+        border-color: var(--primary-dark, #2d4f3f);
+        transform: translateY(-2px);
+        box-shadow: 0 18px 36px rgba(63, 111, 88, 0.28);
     }
-`
+
+    &:active {
+        transform: translateY(0);
+    }
+`;
 
 export const ForgetPasswordInput = styled(Link)`
-    font-weight: 600;
-`
+    width: fit-content;
+    margin: 2px 0 8px;
+
+    color: var(--primary-dark, #2d4f3f);
+
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 900;
+
+    transition: 0.16s ease;
+
+    &:hover {
+        color: var(--primary, #3f6f58);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+    }
+`;

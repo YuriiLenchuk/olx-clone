@@ -10,7 +10,7 @@ const CategorySchema = new mongoose.Schema({
         required: true,
     },
     photoFilename: {
-        type: String, // зберігати тут ім'я файлу в GridFS
+        type: String,
         required: false,
     },
     subcategories: [

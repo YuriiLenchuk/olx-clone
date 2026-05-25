@@ -1,67 +1,162 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 const bcrypt = require('bcryptjs');
-// eslint-disable-next-line import/no-extraneous-dependencies
 const { validationResult } = require('express-validator');
-// eslint-disable-next-line import/no-extraneous-dependencies
 const jwt = require('jsonwebtoken');
+
 const User = require('../models/user_model');
-const Role = require('../models/role_model');
 const { secret } = require('../config');
 
-const generateAccesToken = (id, role) => {
-    const payload = { id, role };
+const generateAccessToken = (id, roles) => {
+    const payload = { id, roles };
     return jwt.sign(payload, secret, { expiresIn: '24h' });
 };
+
+const getSafeUser = user => ({
+    id: user._id,
+    username: user.username,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    city: user.city,
+    avatar: user.avatar,
+    roles: user.roles,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+});
 
 const registration = async (req, res) => {
     try {
         const errors = validationResult(req);
+
         if (!errors.isEmpty()) {
-            return res.status(400).json({ message: 'Помилка про реєстрації', errors });
+            return res.status(400).json({
+                message: 'Помилка при реєстрації',
+                errors,
+            });
         }
-        const { username, password } = req.body;
-        const candidate = await User.findOne({ username }, undefined, undefined);
-        if (candidate) {
-            return res.status(409).json('Користувач з таким ім\'ям вже ісеує');
+
+        const {
+            username,
+            password,
+            email,
+            firstName,
+            lastName,
+            phone,
+            city,
+        } = req.body;
+
+        const candidateByUsername = await User.findOne({ username });
+
+        if (candidateByUsername) {
+            return res.status(409).json({
+                message: 'Користувач з таким іменем вже існує',
+            });
         }
+
+        if (email) {
+            const candidateByEmail = await User.findOne({ email });
+
+            if (candidateByEmail) {
+                return res.status(409).json({
+                    message: 'Користувач з таким email вже існує',
+                });
+            }
+        }
+
         const hashPassword = bcrypt.hashSync(password, 7);
-        const user = new User({ username, password: hashPassword, roles: ['USER'] });
+
+        const user = new User({
+            username,
+            password: hashPassword,
+            email,
+            firstName,
+            lastName,
+            phone,
+            city,
+            roles: ['USER'],
+        });
+
         await user.save();
-        const {_id, roles} = await User.findOne({ username }, undefined, undefined);
-        const token = generateAccesToken(_id, roles);
-        return res.json({ token });
+
+        const token = generateAccessToken(user._id, user.roles);
+
+        return res.status(201).json({
+            token,
+            user: getSafeUser(user),
+        });
     } catch (e) {
         console.log(e);
-        return res.status(409).json({ message: 'register error' });
+
+        return res.status(500).json({
+            message: 'Register error',
+        });
     }
 };
 
 const login = async (req, res) => {
     try {
         const { username, password } = req.body;
-        const user = await User.findOne({ username }, undefined, undefined);
+
+        const user = await User.findOne({ username });
+
         if (!user || !bcrypt.compareSync(password, user.password)) {
-            return res.status(400).json({ message: 'Невірне ім\'я користувача, або пароль' });
+            return res.status(400).json({
+                message: 'Невірне імʼя користувача або пароль',
+            });
         }
-        // eslint-disable-next-line no-underscore-dangle
-        const token = generateAccesToken(user._id, user.roles);
-        return res.json({ token });
+
+        const token = generateAccessToken(user._id, user.roles);
+
+        return res.json({
+            token,
+            user: getSafeUser(user),
+        });
     } catch (e) {
         console.log(e);
-        return res.status(400).json({ message: 'login error' });
+
+        return res.status(500).json({
+            message: 'Login error',
+        });
+    }
+};
+
+const me = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+
+        if (!user) {
+            return res.status(404).json({
+                message: 'Користувача не знайдено',
+            });
+        }
+
+        return res.json({
+            user,
+        });
+    } catch (e) {
+        console.log(e);
+
+        return res.status(500).json({
+            message: 'Me error',
+        });
     }
 };
 
 const getUsers = async (req, res) => {
     try {
-        res.status(200).json(await User.find(undefined, undefined, undefined));
+        const users = await User.find().select('-password');
+
+        return res.status(200).json(users);
     } catch (e) {
-        res.json('err');
+        return res.status(500).json({
+            message: 'Get users error',
+        });
     }
 };
 
 module.exports = {
     registration,
     login,
+    me,
     getUsers,
 };

@@ -1,18 +1,34 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 const jwt = require('jsonwebtoken');
 const { secret } = require('../config');
 
-// eslint-disable-next-line consistent-return
 module.exports = (req, res, next) => {
-    if (req.method === 'OPTIONS') next();
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
 
     try {
-        const token = req.headers.authorization.split(' ')[1];
-        if (!token) return res.status(403).json({ message: 'Користувач не авторизований' });
-        res.user = jwt.verify(token, secret);
-        next();
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            return res.status(401).json({
+                message: 'Користувач не авторизований',
+            });
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({
+                message: 'Користувач не авторизований',
+            });
+        }
+
+        req.user = jwt.verify(token, secret);
+
+        return next();
     } catch (e) {
-        console.log(e);
-        return res.status(403).json({ message: 'Користувач не авторизований' });
+        return res.status(401).json({
+            message: 'Користувач не авторизований',
+        });
     }
 };

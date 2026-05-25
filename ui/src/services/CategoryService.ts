@@ -22,22 +22,24 @@ interface CategoryGroup {
 }
 
 interface Item {
-    _id: string,
-    name: string,
-    img: string[],
-    description: string,
-    price: number,
-    isNewState: string,
-    owner: {
-        username: string,
-    },
-    location: string,
+    _id: string;
+    name: string;
+    img: string[];
+    description: string;
+    price: number;
+    isNewState: boolean;
+    owner?: {
+        username?: string;
+        email?: string;
+        phone?: string;
+        city?: string;
+    };
+    location: string;
     categoryData: {
-        category: string,
-        subcategory: string,
-    },
-    date: string,
-    item?: Item
+        category: string;
+        subcategory?: string;
+    };
+    date: string;
 }
 
 class CategoryService {
@@ -60,6 +62,17 @@ class CategoryService {
             throw new ErrorHandler(e?.response?.data);
         }
     }
+    
+    static getItemById = async (id: string): Promise<Item> => {
+        try {
+            const response = await api.get(`/item/${id}`);
+
+            return response.data.item || response.data.items || response.data;
+        } catch (e: any) {
+            console.log(e, 'error');
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
 }
 
 export {

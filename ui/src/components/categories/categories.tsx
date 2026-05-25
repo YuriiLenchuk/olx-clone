@@ -15,14 +15,17 @@ export const Categories: React.FC<Props> = ({categories}: Props) => {
     return (
         <StyledCategories>
             <div>
-                <h2>Розділи на сервісі OLX</h2>
+                <h2>Категорії</h2>
             </div>
             <StyledCategoriesList>
-                {
-                    categories.map((category: Category) => (
-                        <CategoryCard category={category} setSelectedCategory={setSelectedCategory} selectedCategory={selectedCategory}/>
-                    ))
-                }
+                {categories.map((category: Category) => (
+                    <CategoryCard
+                        key={category.name}
+                        category={category}
+                        setSelectedCategory={setSelectedCategory}
+                        selectedCategory={selectedCategory}
+                    />
+                ))}
             </StyledCategoriesList>
         </StyledCategories>
     )

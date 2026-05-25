@@ -7,6 +7,7 @@ const StyledSort = styled.div`
     display: flex;
     justify-content: end;
     align-items: center;
+    
 `
 
 export {StyledSort}

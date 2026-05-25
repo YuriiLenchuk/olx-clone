@@ -19,22 +19,26 @@ export default function Auth() {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const onClick = (data:User) => {
+        console.log("onClick");
         switch (variant) {
             case 'isRegister': UserService.registration({username: data.user, password: data.password}).then(r => {
                 document.cookie = `authToken=${r.token};`
                 return router.push("/home");
             }); break;
             case 'isLogin': UserService.login({username: data.user, password: data.password}).then(r => {
+                console.log(1234)
                 document.cookie = `authToken=${r.token};`
                 return router.push("/home");
-            }).catch(e => setError(e.message)); break;
+            }).catch(e => {
+                console.log(123)
+                setError(e?.response?.data)
+            }); break;
         }
 
     }
     const {
         register,
         handleSubmit,
-        watch,
         formState: { errors },
     } = useForm<Inputs>()
 
@@ -68,11 +72,8 @@ export default function Auth() {
                                 <span><span> - </span>Мінімум одну цифру</span>
                             </div>
                         </WrapperInput>
-                        {errors.password && <span>This field is required</span>}
+                        {error && <span>This field is required</span>}
                         <div style={{alignSelf: "center", margin: "16px 0 0 0"}}></div>
-                        <div>
-                            <p style={{fontSize: "12px"}}>Створюючи профіль на OLX, ви погоджуєтеся з <b>Умовами використання</b></p>
-                        </div>
                         <SubmitButton value="Зареєструватися" type="submit"/>
                     </WrapperForm>
                 </WrapperFormContainer>
@@ -106,12 +107,9 @@ export default function Auth() {
                         </div>
                         {error && <p role="alert">{error}</p>}
                         <SubmitButton value="Увійти" type="submit"/>
-                        <div style={{margin: "24px 0 0 0"}}>
-                            <p style={{textAlign: "center", fontSize: "12px"}}>Під час входу ви погоджуєтеся з нашими <b>Умови користування</b>.</p>
-                        </div>
                     </WrapperForm>
                 </WrapperFormContainer>
             </div>
-)
-)
+        )
+    )
 }
