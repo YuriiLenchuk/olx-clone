@@ -5,26 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="62621f5a-b3d4-44d2-ab93-1184b86497f3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../api/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../api/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/config/db.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/config/db.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/controllers/auth.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/controllers/auth.controller.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/routes/auth.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/routes/auth.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/registration/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/registration/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/registration/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/registration/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/globals.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/CustomSelect/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/CustomSelect/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/InfiniteScroll/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InfiniteScroll/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ItemCard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ItemCard/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ItemCard/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ItemCard/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ItemCardMenu/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ItemCardMenu/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/categories/categories.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/categories/categories.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/categories/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/categories/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/categoryCard/categoryCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/categoryCard/categoryCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/categoryCard/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/categoryCard/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/header/header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/header/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/search/search.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/search/search.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/search/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/search/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/subcategory/subcategoryPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/subcategory/subcategoryPanel.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,17 +53,18 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;npm.Next.js: server-side.executor&quot;: &quot;Run&quot;,
     &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\poilk\\Desktop\\web\\olx-clone\\ui\\node_modules\\typescript\\lib&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src\app\(main)\auth" />
       <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src" />
       <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\public" />
       <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src\components" />
       <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src\app\(main)" />
-      <recent name="C:\Users\poilk\Desktop\web\olx-clone\ui\src\app\(main)\category" />
     </key>
   </component>
   <component name="RunManager" selected="npm.Next.js: server-side">
@@ -134,6 +118,8 @@
       <workItem from="1779376826676" duration="5000" />
       <workItem from="1779376841642" duration="1848000" />
       <workItem from="1779378713529" duration="1150000" />
+      <workItem from="1779718549092" duration="6436000" />
+      <workItem from="1779808785017" duration="4000" />
     </task>
     <servers />
   </component>

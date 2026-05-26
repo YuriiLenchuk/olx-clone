@@ -37,15 +37,7 @@ const registration = async (req, res) => {
             });
         }
 
-        const {
-            username,
-            password,
-            email,
-            firstName,
-            lastName,
-            phone,
-            city,
-        } = req.body;
+        const { username, password, email, firstName, lastName, phone, city } = req.body;
 
         const candidateByUsername = await User.findOne({ username });
 
@@ -156,9 +148,64 @@ const getUsers = async (req, res) => {
     }
 };
 
+const updateMe = async (req, res) => {
+    try {
+        const {
+            email,
+            firstName,
+            lastName,
+            phone,
+            city,
+            avatar,
+        } = req.body;
+
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: 'Користувача не знайдено',
+            });
+        }
+
+        if (email && email !== user.email) {
+            const candidateByEmail = await User.findOne({ email });
+
+            if (
+                candidateByEmail &&
+                String(candidateByEmail._id) !== String(user._id)
+            ) {
+                return res.status(409).json({
+                    message: 'Користувач з таким email вже існує',
+                });
+            }
+        }
+
+        user.email = email || undefined;
+        user.firstName = firstName ?? user.firstName;
+        user.lastName = lastName ?? user.lastName;
+        user.phone = phone ?? user.phone;
+        user.city = city ?? user.city;
+        user.avatar = avatar ?? user.avatar;
+
+        await user.save();
+
+        return res.status(200).json({
+            message: 'Профіль оновлено',
+            user: getSafeUser(user),
+        });
+    } catch (e) {
+        console.log(e);
+
+        return res.status(500).json({
+            message: 'Update profile error',
+        });
+    }
+};
+
 module.exports = {
     registration,
     login,
     me,
     getUsers,
+    updateMe,
 };
