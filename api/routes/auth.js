@@ -7,6 +7,9 @@ const {
     me,
     updateMe,
     getUsers,
+    updateUsername,
+    updatePassword,
+    deleteMe,
 } = require('../controllers/auth.controller');
 
 const authMiddleware = require('../middleware/authMiddleware');
@@ -42,5 +45,21 @@ router.patch(
 );
 
 router.get('/users', roleMiddleware(['ADMIN']), getUsers);
+
+router.patch(
+    '/me/username',
+    authMiddleware,
+    [
+        check('username', 'Логін не може бути пустим').notEmpty(),
+        check('username', 'Логін має містити мінімум 3 символи').isLength({
+            min: 3,
+        }),
+    ],
+    updateUsername,
+);
+
+router.patch('/me/password', authMiddleware, updatePassword);
+
+router.delete('/me', authMiddleware, deleteMe);
 
 module.exports = router;

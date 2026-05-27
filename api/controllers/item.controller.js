@@ -203,6 +203,46 @@ const updateItem = async (req, res) => {
     }
 };
 
+const getMyItems = async (req, res) => {
+    try {
+        let { page, limit } = req.query;
+
+        page = parseInt(page, 10) || 1;
+        limit = parseInt(limit, 10) || 12;
+
+        const skip = (page - 1) * limit;
+
+        const filter = {
+            owner: req.user.id,
+        };
+
+        const items = await Item.find(filter)
+            .sort({ date: -1, createdAt: -1 })
+            .select('-__v')
+            .populate({
+                path: 'owner',
+                select: '-password -roles -__v',
+            })
+            .skip(skip)
+            .limit(limit);
+
+        const totalItems = await Item.countDocuments(filter);
+
+        return res.status(200).json({
+            items,
+            page,
+            limit,
+            totalPages: Math.ceil(totalItems / limit),
+            totalItems,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: 'Помилка при отриманні ваших оголошень',
+            error: err.message,
+        });
+    }
+};
+
 module.exports = {
     getAllItems,
     getItemById,
@@ -210,4 +250,5 @@ module.exports = {
     createItem,
     deleteItem,
     updateItem,
+    getMyItems,
 };

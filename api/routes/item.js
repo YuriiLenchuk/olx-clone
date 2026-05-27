@@ -4,7 +4,9 @@ const {
     getItemById,
     createItem,
     updateItem,
-    deleteItem, getItemByCategory,
+    deleteItem,
+    getItemByCategory,
+    getMyItems,
 } = require('../controllers/item.controller');
 
 const upload = require('../middleware/uploadMiddleware');
@@ -16,6 +18,8 @@ const router = express.Router();
 router.get('/', getAllItems);
 
 router.get('/category/:name', getItemByCategory);
+
+router.get('/my', authMiddleware, getMyItems);
 
 router.get('/:id', getItemById);
 
