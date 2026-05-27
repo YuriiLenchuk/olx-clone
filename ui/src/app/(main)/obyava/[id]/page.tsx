@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
-
+import ChatService from '@/services/ChatService';
 import { CategoryService, Item } from '@/services/CategoryService';
 import date from '@/Utils/DateStr';
 import Like from '@/icons/Like';
@@ -123,7 +123,7 @@ export default function ItemPage() {
         router.push(`/checkout/${item._id}`);
     }
 
-    function handleContactSeller() {
+    async function handleContactSeller() {
         if (!item) return;
 
         const token = Cookies.get('authToken');
@@ -133,7 +133,13 @@ export default function ItemPage() {
             return;
         }
 
-        alert('Функція повідомлень продавцю буде додана пізніше');
+        try {
+            const chat = await ChatService.createOrGetChat(token, item._id);
+
+            router.push(`/chats/${chat._id}`);
+        } catch (e: any) {
+            alert(e?.message || 'Не вдалося створити чат із продавцем');
+        }
     }
 
     if (isLoading) {
@@ -247,12 +253,12 @@ export default function ItemPage() {
 
                         <SellerCard>
                             <SellerAvatar>
-                                {(item.owner?.username || 'U').charAt(0).toUpperCase()}
+                                {(item.owner?.avatar || item.owner?.username || 'U').charAt(0).toUpperCase()}
                             </SellerAvatar>
 
                             <SellerInfo>
                                 <span>Продавець</span>
-                                <strong>{item.owner?.username || 'Користувач'}</strong>
+                                <strong>{(item.owner?.firstName + ' ' + item.owner?.lastName) || item.owner?.username || 'Користувач'}</strong>
                                 <p>На Local Market</p>
                             </SellerInfo>
 

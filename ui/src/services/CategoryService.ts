@@ -29,7 +29,10 @@ interface Item {
     price: number;
     isNewState: boolean;
     owner?: {
+        avatar: string;
         username?: string;
+        firstName?: string;
+        lastName?: string;
         email?: string;
         phone?: string;
         city?: string;

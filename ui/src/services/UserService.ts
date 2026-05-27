@@ -47,6 +47,19 @@ export interface UpdateUserPayload {
     avatar?: string;
 }
 
+export interface UpdateUsernamePayload {
+    username: string;
+}
+
+export interface UpdatePasswordPayload {
+    currentPassword: string;
+    newPassword: string;
+}
+
+export interface DeleteAccountPayload {
+    currentPassword: string;
+}
+
 class UserService {
     private static getAuthHeaders(token: string) {
         return {
@@ -109,6 +122,51 @@ class UserService {
             return response.data.user;
         } catch (e: any) {
             console.log(e, 'update me error');
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
+
+    static updateUsername = async (
+        token: string,
+        payload: UpdateUsernamePayload,
+    ): Promise<AuthUser> => {
+        try {
+            const response = await api.patch('/auth/me/username', payload, {
+                headers: this.getAuthHeaders(token),
+            });
+
+            return response.data.user;
+        } catch (e: any) {
+            console.log(e, 'update username error');
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
+
+    static updatePassword = async (
+        token: string,
+        payload: UpdatePasswordPayload,
+    ): Promise<void> => {
+        try {
+            await api.patch('/auth/me/password', payload, {
+                headers: this.getAuthHeaders(token),
+            });
+        } catch (e: any) {
+            console.log(e, 'update password error');
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
+
+    static deleteMe = async (
+        token: string,
+        payload: DeleteAccountPayload,
+    ): Promise<void> => {
+        try {
+            await api.delete('/auth/me', {
+                headers: this.getAuthHeaders(token),
+                data: payload,
+            });
+        } catch (e: any) {
+            console.log(e, 'delete account error');
             throw new ErrorHandler(e?.response?.data);
         }
     };
