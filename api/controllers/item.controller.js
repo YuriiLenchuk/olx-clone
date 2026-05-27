@@ -1,6 +1,13 @@
 const Item = require('../models/item_model');
+const {log} = require("debug");
 
-// GET /api/items — отримати всі товари
+function isAdmin(req) {
+    return Array.isArray(req.user?.roles) && req.user.roles.includes('ADMIN');
+}
+
+function isOwner(item, req) {
+    return String(item) === String(req.user?.id);
+}
 const getAllItems = async (req, res) => {
     let { page, limit } = req.query;
 
@@ -42,9 +49,11 @@ const getItemByCategory = async (req, res) => {
             return res.status(400).json({ error: 'Параметр "name" є обовʼязковим.' });
         }
 
-        const items = await Item.find({
+        const filter = {
             $or: [{ 'categoryData.category': name }, { 'categoryData.subcategory': name }],
-        })
+        };
+
+        const items = await Item.find()
             .sort(sort)
             .select('-__v')
             .populate({
@@ -54,7 +63,7 @@ const getItemByCategory = async (req, res) => {
             .skip(skip)
             .limit(parseInt(limit, 10) || 10);
 
-        const totalItems = await Item.countDocuments();
+        const totalItems = await Item.countDocuments(filter);
 
         return res
             .status(200)
@@ -94,6 +103,20 @@ const getItemById = async (req, res) => {
     }
 };
 
+function validateInfo(req) {
+    const { name, img, description, price, isNewState, owner, location, categoryData } = req.body;
+    const errors = [];
+    if (!name.trim()) errors.append('Назва');
+    if (!description.trim()) errors.append('Опис');
+    if (!price.trim()) errors.append('Ціна');
+    if (Number(price) <= 0) errors.append('Ціна нижче 0');
+    if (isNewState === undefined) errors.append('Виберіть стан');
+    if (!location.trim()) errors.append('Місто');
+    if (!categoryData) errors.append('Категорія');
+    if (img.length === 0) errors.append('Додайте зображення');
+
+    return errors;
+}
 // POST /api/items — створити новий товар
 const createItem = async (req, res) => {
     try {
@@ -102,20 +125,16 @@ const createItem = async (req, res) => {
             ? (req.body.isNewState = true)
             : (req.body.isNewState = false);
 
-        const { name, img, description, price, isNewState, owner, location, categoryData } =
-            req.body;
+        const { name, img, description, price, isNewState, location, categoryData } = req.body;
         // Валідація обов'язкових полів
-        if (
-            !name ||
-            !img ||
-            !description ||
-            !price ||
-            typeof isNewState !== 'boolean' ||
-            !location ||
-            !categoryData ||
-            !categoryData.category
-        ) {
-            return res.status(400).json({ message: 'Обов’язкові поля відсутні або некоректні' });
+        const validatedInfo = await validateInfo(req);
+        console.log(validatedInfo);
+        console.log(req.body);
+        if (validatedInfo.length) {
+            return res.status(400).json({
+                message: 'Обов’язкові поля відсутні або некоректні',
+                missedFields: validatedInfo,
+            });
         }
         const newItem = new Item({
             name,
@@ -123,14 +142,15 @@ const createItem = async (req, res) => {
             description,
             price: parseInt(price, 10),
             isNewState,
-            owner,
+            owner: req.user.id,
             location,
-            categoryData,
+            categoryData: JSON.parse(categoryData),
         });
 
         const savedItem = await newItem.save();
         return res.status(201).json(savedItem);
     } catch (err) {
+        console.log(err)
         return res
             .status(400)
             .json({ message: 'Помилка при створенні товару', error: err.message });

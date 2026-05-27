@@ -9,12 +9,13 @@ import date from '@/Utils/DateStr';
 import Like from '@/icons/Like';
 
 import {
-    ActionButton,
     BackButton,
     Badge,
     Breadcrumbs,
+    BuyButton,
     ContactButton,
     DescriptionCard,
+    DetailsSection,
     EmptyImage,
     ErrorText,
     GalleryCard,
@@ -61,7 +62,7 @@ export default function ItemPage() {
     const params = useParams<{ id: string }>();
 
     const [item, setItem] = useState<Item | null>(null);
-    const [selectedImage, setSelectedImage] = useState<string>('');
+    const [selectedImage, setSelectedImage] = useState('');
     const [isFavorite, setIsFavorite] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -98,6 +99,7 @@ export default function ItemPage() {
 
         if (favoriteIds.includes(item._id)) {
             const updatedIds = favoriteIds.filter((id) => id !== item._id);
+
             Cookies.set('checked', JSON.stringify(updatedIds));
             setIsFavorite(false);
             return;
@@ -106,6 +108,32 @@ export default function ItemPage() {
         favoriteIds.push(item._id);
         Cookies.set('checked', JSON.stringify(favoriteIds));
         setIsFavorite(true);
+    }
+
+    function handleBuy() {
+        if (!item) return;
+
+        const token = Cookies.get('authToken');
+
+        if (!token) {
+            router.push('/registration');
+            return;
+        }
+
+        router.push(`/checkout/${item._id}`);
+    }
+
+    function handleContactSeller() {
+        if (!item) return;
+
+        const token = Cookies.get('authToken');
+
+        if (!token) {
+            router.push('/registration');
+            return;
+        }
+
+        alert('Функція повідомлень продавцю буде додана пізніше');
     }
 
     if (isLoading) {
@@ -123,6 +151,7 @@ export default function ItemPage() {
             <Page>
                 <PageContainer>
                     <ErrorText>{error || 'Оголошення не знайдено'}</ErrorText>
+
                     <BackButton type="button" onClick={() => router.back()}>
                         Повернутися назад
                     </BackButton>
@@ -138,8 +167,10 @@ export default function ItemPage() {
                     <button type="button" onClick={() => router.back()}>
                         Назад
                     </button>
+
                     <span>/</span>
                     <span>{item.categoryData?.category || 'Категорія'}</span>
+
                     {item.categoryData?.subcategory && (
                         <>
                             <span>/</span>
@@ -193,18 +224,6 @@ export default function ItemPage() {
                                     <span>Опубліковано</span>
                                     <strong>{date(item.date)}</strong>
                                 </MetaItem>
-
-                                <MetaItem>
-                                    <span>Категорія</span>
-                                    <strong>{item.categoryData?.category || 'Не вказано'}</strong>
-                                </MetaItem>
-
-                                {item.categoryData?.subcategory && (
-                                    <MetaItem>
-                                        <span>Підкатегорія</span>
-                                        <strong>{item.categoryData.subcategory}</strong>
-                                    </MetaItem>
-                                )}
                             </InfoGrid>
 
                             <LikeButton
@@ -220,6 +239,10 @@ export default function ItemPage() {
                                 />
                                 {isFavorite ? 'В обраному' : 'Додати в обране'}
                             </LikeButton>
+
+                            <BuyButton type="button" onClick={handleBuy}>
+                                Купити
+                            </BuyButton>
                         </InfoCard>
 
                         <SellerCard>
@@ -233,26 +256,22 @@ export default function ItemPage() {
                                 <p>На Local Market</p>
                             </SellerInfo>
 
-                            <ContactButton
-                                type="button"
-                                onClick={() =>
-                                    alert('Функція повідомлень продавцю буде додана пізніше')
-                                }
-                            >
+                            <ContactButton type="button" onClick={handleContactSeller}>
                                 Написати продавцю
                             </ContactButton>
                         </SellerCard>
                     </SideColumn>
                 </TopSection>
 
-                <DescriptionCard>
-                    <div>
+                <DetailsSection>
+                    <DescriptionCard>
                         <Badge>Опис</Badge>
-                        <h2>Деталі оголошення</h2>
-                    </div>
 
-                    <p>{item.description || 'Опис для цього оголошення не додано.'}</p>
-                </DescriptionCard>
+                        <h2>Деталі оголошення</h2>
+
+                        <p>{item.description || 'Опис для цього оголошення не додано.'}</p>
+                    </DescriptionCard>
+                </DetailsSection>
             </PageContainer>
         </Page>
     );

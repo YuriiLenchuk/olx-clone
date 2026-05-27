@@ -9,8 +9,10 @@ import {
     StyledHeader,
     WrapperLink,
 } from './styled';
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+    const router = useRouter();
     return (
         <StyledHeader>
             <HeaderInner>
@@ -22,7 +24,7 @@ export default function Header() {
                 <Nav>
                     <WrapperLink href="/wish-list">Збережене</WrapperLink>
                     <WrapperLink href="/registration">Профіль</WrapperLink>
-                    <ActionButton type="button">+ Оголошення</ActionButton>
+                    <ActionButton onClick={() => router.push('/add')} type="button">+ Оголошення</ActionButton>
                 </Nav>
             </HeaderInner>
         </StyledHeader>

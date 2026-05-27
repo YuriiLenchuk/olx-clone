@@ -37,9 +37,7 @@ router.get('/me', authMiddleware, me);
 router.patch(
     '/me',
     authMiddleware,
-    [
-        check('email', 'Некоректний email').optional({ checkFalsy: true }).isEmail(),
-    ],
+    [check('email', 'Некоректний email').optional({ checkFalsy: true }).isEmail()],
     updateMe,
 );
 

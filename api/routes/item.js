@@ -6,23 +6,25 @@ const {
     updateItem,
     deleteItem, getItemByCategory,
 } = require('../controllers/item.controller');
+
 const upload = require('../middleware/uploadMiddleware');
 const uploadToGridFS = require('../controllers/gridfsUploadController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 router.get('/', getAllItems);
 
-router.get('/:id', getItemById);
-
 router.get('/category/:name', getItemByCategory);
 
-router.post('/', upload.array('img', 5), uploadToGridFS, createItem);
+router.get('/:id', getItemById);
 
-router.put('/:id', updateItem);
+router.post('/', authMiddleware, upload.array('img', 5), uploadToGridFS, createItem);
 
-router.patch('/:id', updateItem);
+router.put('/:id', authMiddleware, updateItem);
 
-router.delete('/:id', deleteItem);
+router.patch('/:id', authMiddleware, updateItem);
+
+router.delete('/:id', authMiddleware, deleteItem);
 
 module.exports = router;
