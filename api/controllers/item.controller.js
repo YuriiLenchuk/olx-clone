@@ -124,7 +124,7 @@ const getItemById = async (req, res) => {
 
         if (!items) return res.status(404).json({ message: 'Товар не знайдено' });
         const totalItems = await Item.countDocuments();
-        console.log(items);
+
         return res
             .status(200)
             .json({ items, page, limit, totalPages: Math.ceil(totalItems / limit), totalItems });
@@ -136,50 +136,82 @@ const getItemById = async (req, res) => {
 function validateInfo(req) {
     const { name, img, description, price, isNewState, owner, location, categoryData } = req.body;
     const errors = [];
-    if (!name.trim()) errors.append('Назва');
-    if (!description.trim()) errors.append('Опис');
-    if (!price.trim()) errors.append('Ціна');
-    if (Number(price) <= 0) errors.append('Ціна нижче 0');
-    if (isNewState === undefined) errors.append('Виберіть стан');
-    if (!location.trim()) errors.append('Місто');
-    if (!categoryData) errors.append('Категорія');
-    if (img.length === 0) errors.append('Додайте зображення');
+    if (!name.trim()) errors.push('Назва');
+    if (!description.trim()) errors.push('Опис');
+    if (!price.trim()) errors.push('Ціна');
+    if (Number(price) <= 0) errors.push('Ціна нижче 0');
+    if (isNewState === undefined) errors.push('Виберіть стан');
+    if (!location.trim()) errors.push('Місто');
+    if (!categoryData) errors.push('Категорія');
+    if (img.length === 0) errors.push('Додайте зображення');
 
     return errors;
 }
 
-const createItem = async (req, res) => {
+const validateCreateItem = (req, res, next) => {
     try {
-        req.body.isNewState = req.body.newState === 'true';
+        const errors = [];
 
-        const { name, img, description, price, isNewState, location, categoryData } = req.body;
+        const name = String(req.body.name || '').trim();
+        const description = String(req.body.description || '').trim();
+        const price = Number(req.body.price);
+        const location = String(req.body.location || '').trim();
+        const isNewState = parseBoolean(req.body.isNewState ?? req.body.newState);
+        const categoryData = parseCategoryData(req.body.categoryData);
 
-        const validatedInfo = await validateInfo(req);
-        console.log(validatedInfo);
-        console.log(req.body);
-        if (validatedInfo.length) {
+        if (!name) errors.push('Назва');
+        if (!description) errors.push('Опис');
+        if (!Number.isFinite(price) || price <= 0) errors.push('Ціна');
+        if (typeof isNewState !== 'boolean') errors.push('Виберіть стан');
+        if (!location) errors.push('Місто');
+        if (!categoryData?.category) errors.push('Категорія');
+        if (!req.files?.length) errors.push('Додайте зображення');
+
+        if (errors.length) {
             return res.status(400).json({
                 message: 'Обов’язкові поля відсутні або некоректні',
-                missedFields: validatedInfo,
+                missedFields: errors,
             });
         }
+
+        req.body.name = name;
+        req.body.description = description;
+        req.body.price = price;
+        req.body.location = location;
+        req.body.isNewState = isNewState;
+        req.body.categoryData = categoryData;
+
+        return next();
+    } catch (err) {
+        return res.status(400).json({
+            message: err.message,
+        });
+    }
+};
+
+const createItem = async (req, res) => {
+    try {
+        const { name, img, description, price, isNewState, location, categoryData } = req.body;
+
         const newItem = new Item({
             name,
             img,
             description,
-            price: parseInt(price, 10),
+            price,
             isNewState,
             owner: req.user.id,
             location,
-            categoryData: JSON.parse(categoryData),
+            categoryData,
         });
 
         const savedItem = await newItem.save();
+
         return res.status(201).json(savedItem);
     } catch (err) {
-        return res
-            .status(400)
-            .json({ message: 'Помилка при створенні товару', error: err.message });
+        return res.status(400).json({
+            message: 'Помилка при створенні товару',
+            error: err.message,
+        });
     }
 };
 
@@ -339,4 +371,5 @@ module.exports = {
     deleteItem,
     updateItem,
     getMyItems,
+    validateCreateItem,
 };

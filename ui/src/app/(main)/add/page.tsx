@@ -218,8 +218,13 @@ export default function AddPage() {
             formData.append('location', form.location.trim());
             formData.append('isNewState', String(form.isNewState));
 
-            formData.append('categoryData[category]', form.category);
-            formData.append('categoryData[subcategory]', form.subcategory);
+            formData.append(
+                'categoryData',
+                JSON.stringify({
+                    category: form.category,
+                    ...(form.subcategory ? { subcategory: form.subcategory } : {}),
+                }),
+            );
 
             images.forEach((image) => {
                 formData.append('img', image);

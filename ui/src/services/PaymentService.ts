@@ -9,18 +9,24 @@ export type PaymentMethod =
     | 'cash_on_delivery';
 
 export type PaymentStatus =
-    | 'pending'
     | 'processing'
     | 'requires_action'
     | 'paid_test'
     | 'failed'
     | 'cancelled';
 
-export type OrderStatus =
+export type CheckoutPaymentStatus =
+    | 'pending'
+    | 'processing'
+    | 'paid_test'
+    | 'failed'
+    | 'cancelled';
+
+export type CheckoutStatus =
     | 'awaiting_payment'
     | 'paid'
-    | 'cancelled'
-    | 'failed';
+    | 'failed'
+    | 'cancelled';
 
 export interface PaymentUser {
     _id: string;
@@ -43,13 +49,37 @@ export interface PaymentItem {
     owner?: string | PaymentUser;
 }
 
-export interface PaymentDelivery {
+export interface CheckoutDelivery {
     type: DeliveryType;
     city?: string;
     address?: string;
     receiverName?: string;
     phone?: string;
     comment?: string;
+}
+
+export interface Checkout {
+    _id: string;
+    item: string | PaymentItem;
+    buyer: string | PaymentUser;
+    seller: string | PaymentUser;
+
+    amount: number;
+    serviceFee: number;
+    totalAmount: number;
+    currency: string;
+
+    delivery: CheckoutDelivery;
+
+    paymentMethod: PaymentMethod;
+    paymentStatus: CheckoutPaymentStatus;
+    checkoutStatus: CheckoutStatus;
+
+    payment?: string | Payment | null;
+    paidAt?: string | null;
+
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface PaymentCardInfo {
@@ -66,22 +96,17 @@ export interface GooglePayInfo {
 export interface Payment {
     _id: string;
 
+    checkout: string | Checkout;
     item: string | PaymentItem;
     buyer: string | PaymentUser;
     seller: string | PaymentUser;
 
     amount: number;
-    serviceFee: number;
-    totalAmount: number;
     currency: string;
-
-    delivery: PaymentDelivery;
 
     method: PaymentMethod;
     status: PaymentStatus;
-    orderStatus: OrderStatus;
 
-    providerPaymentId?: string | null;
     mockTransactionId?: string | null;
 
     cardInfo?: PaymentCardInfo;
@@ -94,20 +119,9 @@ export interface Payment {
     updatedAt: string;
 }
 
-export interface CreateCheckoutPayload {
-    itemId: string;
-    method: PaymentMethod;
-
-    deliveryType: DeliveryType;
-    deliveryCity?: string;
-    deliveryAddress?: string;
-    receiverName?: string;
-    buyerPhone?: string;
-    buyerComment?: string;
-}
-
 export interface PaymentResponse {
     message: string;
+    checkout: Checkout;
     payment: Payment;
 }
 
@@ -123,36 +137,14 @@ class PaymentService {
         };
     }
 
-    static createCheckout = async (
-        token: string,
-        payload: CreateCheckoutPayload,
-    ): Promise<Payment> => {
-        try {
-            const response = await api.post(
-                '/payments/checkout',
-                payload,
-                {
-                    headers: this.getAuthHeaders(token),
-                },
-            );
-
-            return response.data.payment;
-        } catch (e: any) {
-            throw new ErrorHandler(e?.response?.data);
-        }
-    };
-
     static getPaymentById = async (
         token: string,
         paymentId: string,
     ): Promise<Payment> => {
         try {
-            const response = await api.get(
-                `/payments/${paymentId}`,
-                {
-                    headers: this.getAuthHeaders(token),
-                },
-            );
+            const response = await api.get(`/payments/${paymentId}`, {
+                headers: this.getAuthHeaders(token),
+            });
 
             return response.data.payment;
         } catch (e: any) {
@@ -162,15 +154,13 @@ class PaymentService {
 
     static payWithGooglePay = async (
         token: string,
-        paymentId: string,
+        checkoutId: string,
         paymentData: any,
     ): Promise<PaymentResponse> => {
         try {
             const response = await api.post(
-                `/payments/${paymentId}/google-pay`,
-                {
-                    paymentData,
-                },
+                `/payments/${checkoutId}/google-pay`,
+                { paymentData },
                 {
                     headers: this.getAuthHeaders(token),
                 },
@@ -184,15 +174,13 @@ class PaymentService {
 
     static simulateCardPayment = async (
         token: string,
-        paymentId: string,
+        checkoutId: string,
         cardNumber: string,
     ): Promise<CardSimulationResponse> => {
         try {
             const response = await api.post(
-                `/payments/${paymentId}/card-simulation`,
-                {
-                    cardNumber,
-                },
+                `/payments/${checkoutId}/card-simulation`,
+                { cardNumber },
                 {
                     headers: this.getAuthHeaders(token),
                 },
@@ -206,15 +194,13 @@ class PaymentService {
 
     static confirm3DS = async (
         token: string,
-        paymentId: string,
+        checkoutId: string,
         code: string,
     ): Promise<PaymentResponse> => {
         try {
             const response = await api.post(
-                `/payments/${paymentId}/confirm-3ds`,
-                {
-                    code,
-                },
+                `/payments/${checkoutId}/confirm-3ds`,
+                { code },
                 {
                     headers: this.getAuthHeaders(token),
                 },
@@ -228,11 +214,11 @@ class PaymentService {
 
     static cancelPayment = async (
         token: string,
-        paymentId: string,
+        checkoutId: string,
     ): Promise<PaymentResponse> => {
         try {
             const response = await api.patch(
-                `/payments/${paymentId}/cancel`,
+                `/payments/${checkoutId}/cancel`,
                 {},
                 {
                     headers: this.getAuthHeaders(token),
@@ -245,9 +231,7 @@ class PaymentService {
         }
     };
 
-    static getMyPayments = async (
-        token: string,
-    ): Promise<Payment[]> => {
+    static getMyPayments = async (token: string): Promise<Payment[]> => {
         try {
             const response = await api.get('/payments/my', {
                 headers: this.getAuthHeaders(token),
@@ -259,9 +243,7 @@ class PaymentService {
         }
     };
 
-    static getMySalesPayments = async (
-        token: string,
-    ): Promise<Payment[]> => {
+    static getMySalesPayments = async (token: string): Promise<Payment[]> => {
         try {
             const response = await api.get('/payments/sales', {
                 headers: this.getAuthHeaders(token),

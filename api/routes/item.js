@@ -7,6 +7,7 @@ const {
     deleteItem,
     getItemByCategory,
     getMyItems,
+    validateCreateItem,
 } = require('../controllers/item.controller');
 
 const upload = require('../middleware/uploadMiddleware');
@@ -23,7 +24,14 @@ router.get('/my', authMiddleware, getMyItems);
 
 router.get('/:id', getItemById);
 
-router.post('/', authMiddleware, upload.array('img', 5), uploadToGridFS, createItem);
+router.post(
+    '/',
+    authMiddleware,
+    upload.array('img', 5),
+    validateCreateItem,
+    uploadToGridFS,
+    createItem,
+);
 
 router.put('/:id', authMiddleware, updateItem);
 

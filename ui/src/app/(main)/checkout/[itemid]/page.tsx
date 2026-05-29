@@ -4,10 +4,10 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { CategoryService, Item } from '@/services/CategoryService';
-import PaymentService, {
+import CheckoutService, {
     DeliveryType,
     PaymentMethod,
-} from '@/services/PaymentService';
+} from '@/services/CheckoutService';
 import { getAuthToken } from '@/Utils/authToken';
 
 import {
@@ -177,7 +177,7 @@ export default function CheckoutPage() {
             setIsSubmitting(true);
             setError('');
 
-            const payment = await PaymentService.createCheckout(token, {
+            const checkout = await CheckoutService.createCheckout(token, {
                 itemId: item._id,
                 method: form.method,
                 deliveryType: form.deliveryType,
@@ -188,7 +188,7 @@ export default function CheckoutPage() {
                 buyerComment: form.buyerComment.trim(),
             });
 
-            router.push(`/payment/${payment._id}`);
+            router.push(`/payment/${checkout._id}`);
         } catch (e: any) {
             setError(getErrorMessage(e, 'Не вдалося створити checkout'));
         } finally {

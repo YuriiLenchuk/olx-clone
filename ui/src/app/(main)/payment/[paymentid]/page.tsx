@@ -3,9 +3,12 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
+import CheckoutService from '@/services/CheckoutService';
 import PaymentService, {
     Payment,
     PaymentItem,
+    PaymentMethod,
+    PaymentStatus,
 } from '@/services/PaymentService';
 import { getAuthToken } from '@/Utils/authToken';
 
@@ -40,12 +43,56 @@ declare global {
     }
 }
 
+type DeliveryType = 'pickup' | 'delivery' | 'agreement';
+type CheckoutPaymentStatus = 'pending' | 'processing' | 'paid_test' | 'failed' | 'cancelled';
+type CheckoutStatus = 'awaiting_payment' | 'paid' | 'failed' | 'cancelled';
+type DisplayStatus = PaymentStatus | 'pending';
+
+interface CheckoutDelivery {
+    type: DeliveryType;
+    city?: string;
+    address?: string;
+    receiverName?: string;
+    phone?: string;
+    comment?: string;
+}
+
+interface Checkout {
+    _id: string;
+    item: string | PaymentItem;
+    buyer: string;
+    seller: string;
+    amount: number;
+    serviceFee: number;
+    totalAmount: number;
+    currency: string;
+    delivery: CheckoutDelivery;
+    paymentMethod: PaymentMethod;
+    paymentStatus: CheckoutPaymentStatus;
+    checkoutStatus: CheckoutStatus;
+    payment?: string | Payment | null;
+    paidAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
 const paymentSteps = [
     'Очікування підтвердження',
     'Перевірка платіжних даних',
     'Імітація відповіді банку',
     'Фіксація тестової транзакції',
 ];
+
+const failedStepStyle = {
+    color: '#bd4242',
+    background: '#fff5f5',
+    borderColor: 'rgba(212, 91, 91, 0.35)',
+};
+
+const failedStepMarkerStyle = {
+    color: '#ffffff',
+    background: '#d45b5b',
+};
 
 function formatPrice(value: number) {
     return new Intl.NumberFormat('uk-UA').format(value);
@@ -55,34 +102,48 @@ function getErrorMessage(error: any, fallback: string) {
     return error?.response?.data?.message || error?.message || fallback;
 }
 
-function getPaymentItem(payment: Payment | null): PaymentItem | null {
-    if (!payment || typeof payment.item === 'string') return null;
+function getPaymentItem(checkout: Checkout | null): PaymentItem | null {
+    if (!checkout || typeof checkout.item === 'string') return null;
 
-    return payment.item;
+    return checkout.item;
 }
 
-function getMethodLabel(payment: Payment | null) {
-    if (!payment) return '';
+function getCheckoutPayment(checkout: Checkout | null): Payment | null {
+    if (!checkout?.payment || typeof checkout.payment === 'string') return null;
 
-    if (payment.method === 'google_pay_simulation') {
-        return 'Google Pay';
-    }
-
-    if (payment.method === 'card_simulation') {
-        return 'Картка';
-    }
-
-    return 'Оплата при отриманні';
+    return checkout.payment;
 }
 
-function getStatusLabel(payment: Payment | null) {
-    if (!payment) return 'Очікування';
+function getCurrentStatus(checkout: Checkout | null, payment: Payment | null): DisplayStatus {
+    return payment?.status || checkout?.paymentStatus || 'pending';
+}
 
-    if (payment.status === 'paid_test') return 'Оплачено тестово';
-    if (payment.status === 'processing') return 'Обробка';
-    if (payment.status === 'requires_action') return 'Потрібне 3DS';
-    if (payment.status === 'failed') return 'Помилка';
-    if (payment.status === 'cancelled') return 'Скасовано';
+function getBadgeStatus(status: DisplayStatus): PaymentStatus {
+    return (status === 'pending' ? 'processing' : status) as PaymentStatus;
+}
+
+function getMethodLabel(method?: PaymentMethod) {
+    if (method === 'google_pay_simulation') return 'Google Pay';
+    if (method === 'card_simulation') return 'Картка';
+    if (method === 'cash_on_delivery') return 'Оплата при отриманні';
+
+    return 'Не вказано';
+}
+
+function getDeliveryLabel(type?: DeliveryType) {
+    if (type === 'pickup') return 'Самовивіз';
+    if (type === 'delivery') return 'Доставка';
+    if (type === 'agreement') return 'За домовленістю';
+
+    return 'Не вказано';
+}
+
+function getStatusLabel(status: DisplayStatus) {
+    if (status === 'paid_test') return 'Оплачено тестово';
+    if (status === 'processing') return 'Обробка';
+    if (status === 'requires_action') return 'Потрібне 3DS';
+    if (status === 'failed') return 'Помилка';
+    if (status === 'cancelled') return 'Скасовано';
 
     return 'Очікує оплати';
 }
@@ -121,7 +182,6 @@ const baseRequest = {
 };
 
 const allowedCardNetworks = ['VISA', 'MASTERCARD'];
-
 const allowedCardAuthMethods = ['PAN_ONLY', 'CRYPTOGRAM_3DS'];
 
 const tokenizationSpecification = {
@@ -152,7 +212,7 @@ function getIsReadyToPayRequest() {
     };
 }
 
-function getPaymentDataRequest(payment: Payment) {
+function getPaymentDataRequest(checkout: Checkout) {
     return {
         ...baseRequest,
         allowedPaymentMethods: [
@@ -163,8 +223,8 @@ function getPaymentDataRequest(payment: Payment) {
         ],
         transactionInfo: {
             totalPriceStatus: 'FINAL',
-            totalPrice: Number(payment.totalAmount || 0).toFixed(2),
-            currencyCode: payment.currency || 'UAH',
+            totalPrice: Number(checkout.totalAmount || 0).toFixed(2),
+            currencyCode: checkout.currency || 'UAH',
             countryCode: 'UA',
         },
         merchantInfo: {
@@ -179,12 +239,14 @@ export default function PaymentPage() {
 
     const googlePayButtonRef = useRef<HTMLDivElement | null>(null);
     const paymentsClientRef = useRef<any>(null);
+    const activeStepRef = useRef(0);
 
-    const [payment, setPayment] = useState<Payment | null>(null);
+    const [checkout, setCheckout] = useState<Checkout | null>(null);
     const [cardNumber, setCardNumber] = useState('');
     const [threeDsCode, setThreeDsCode] = useState('');
 
     const [activeStep, setActiveStep] = useState(0);
+    const [failedStep, setFailedStep] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isGooglePayReady, setIsGooglePayReady] = useState(false);
@@ -192,10 +254,18 @@ export default function PaymentPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const item = useMemo(() => getPaymentItem(payment), [payment]);
+    const payment = useMemo(() => getCheckoutPayment(checkout), [checkout]);
+    const item = useMemo(() => getPaymentItem(checkout), [checkout]);
+    const currentStatus = getCurrentStatus(checkout, payment);
+    const isPaid = currentStatus === 'paid_test' || checkout?.checkoutStatus === 'paid';
+    const renderedFailedStep = failedStep ?? (currentStatus === 'failed' ? paymentSteps.length - 1 : null);
 
     useEffect(() => {
-        async function loadPayment() {
+        activeStepRef.current = activeStep;
+    }, [activeStep]);
+
+    useEffect(() => {
+        async function loadCheckout() {
             const token = getAuthToken();
 
             if (!token) {
@@ -207,38 +277,34 @@ export default function PaymentPage() {
                 setIsLoading(true);
                 setError('');
 
-                const data = await PaymentService.getPaymentById(
-                    token,
-                    params.paymentid,
-                );
+                const data = await CheckoutService.getCheckoutById(token, params.paymentid);
 
-                setPayment(data);
+                setCheckout(data);
 
-                if (data.status === 'paid_test') {
+                if (data.paymentStatus === 'paid_test') {
                     setSuccess('Оплату вже підтверджено');
+                    setActiveStep(paymentSteps.length - 1);
+                }
+
+                if (data.paymentStatus === 'failed') {
+                    setFailedStep(paymentSteps.length - 1);
                 }
             } catch (e: any) {
-                setError(getErrorMessage(e, 'Не вдалося завантажити платіж'));
+                setError(getErrorMessage(e, 'Не вдалося завантажити checkout'));
             } finally {
                 setIsLoading(false);
             }
         }
 
-        console.log(params)
         if (params.paymentid) {
-            loadPayment();
+            loadCheckout();
         }
     }, [params.paymentid, router]);
 
     useEffect(() => {
         async function initGooglePay() {
-            if (!payment || payment.method !== 'google_pay_simulation') {
-                return;
-            }
-
-            if (payment.status === 'paid_test') {
-                return;
-            }
+            if (!checkout || checkout.paymentMethod !== 'google_pay_simulation') return;
+            if (isPaid || currentStatus === 'failed' || currentStatus === 'cancelled') return;
 
             try {
                 await loadGooglePayScript();
@@ -281,15 +347,20 @@ export default function PaymentPage() {
 
         initGooglePay();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [payment?._id, payment?.method, payment?.status]);
+    }, [checkout?._id, checkout?.paymentMethod, currentStatus, isPaid]);
 
     function runVisualSteps() {
         setActiveStep(0);
+        activeStepRef.current = 0;
+        setFailedStep(null);
 
-        const timers = paymentSteps.map((_, index) => {
+        const timers = paymentSteps.slice(1).map((_, index) => {
+            const step = index + 1;
+
             return window.setTimeout(() => {
-                setActiveStep(index);
-            }, index * 420);
+                activeStepRef.current = step;
+                setActiveStep(step);
+            }, step * 420);
         });
 
         return () => {
@@ -297,13 +368,22 @@ export default function PaymentPage() {
         };
     }
 
+    function markFailedStep(fallbackStep: number) {
+        const step = Math.min(
+            Math.max(activeStepRef.current, fallbackStep),
+            paymentSteps.length - 1,
+        );
+
+        setFailedStep(step);
+    }
+
     function handleGooglePayClick() {
-        if (!payment || !paymentsClientRef.current) return;
+        if (!checkout || !paymentsClientRef.current) return;
 
         setError('');
         setSuccess('');
 
-        const paymentDataRequest = getPaymentDataRequest(payment);
+        const paymentDataRequest = getPaymentDataRequest(checkout);
 
         paymentsClientRef.current
             .loadPaymentData(paymentDataRequest)
@@ -311,6 +391,7 @@ export default function PaymentPage() {
             .catch((e: any) => {
                 if (e?.statusCode === 'CANCELED') return;
 
+                markFailedStep(0);
                 setError('Оплату через Google Pay не завершено');
             });
     }
@@ -318,7 +399,7 @@ export default function PaymentPage() {
     async function handleGooglePayData(paymentData: any) {
         const token = getAuthToken();
 
-        if (!token || !payment) {
+        if (!token || !checkout) {
             router.replace('/registration');
             return;
         }
@@ -332,16 +413,18 @@ export default function PaymentPage() {
 
             const response = await PaymentService.payWithGooglePay(
                 token,
-                payment._id,
+                checkout._id,
                 paymentData,
             );
 
             clearSteps();
 
-            setPayment(response.payment);
+            setCheckout(response.checkout);
             setActiveStep(paymentSteps.length - 1);
+            setFailedStep(null);
             setSuccess(response.message || 'Google Pay оплату успішно імітовано');
         } catch (e: any) {
+            markFailedStep(2);
             setError(getErrorMessage(e, 'Не вдалося провести Google Pay оплату'));
         } finally {
             setIsProcessing(false);
@@ -353,7 +436,7 @@ export default function PaymentPage() {
 
         const token = getAuthToken();
 
-        if (!token || !payment) {
+        if (!token || !checkout) {
             router.replace('/registration');
             return;
         }
@@ -367,21 +450,26 @@ export default function PaymentPage() {
 
             const response = await PaymentService.simulateCardPayment(
                 token,
-                payment._id,
+                checkout._id,
                 cardNumber,
             );
 
             clearSteps();
 
-            setPayment(response.payment);
+            setCheckout(response.checkout);
 
             if (response.requiresAction) {
+                setActiveStep(2);
+                setFailedStep(null);
                 setSuccess('Потрібне 3DS-підтвердження. Введіть код 111111.');
                 return;
             }
 
+            setActiveStep(paymentSteps.length - 1);
+            setFailedStep(null);
             setSuccess(response.message || 'Оплату карткою успішно імітовано');
         } catch (e: any) {
+            markFailedStep(1);
             setError(getErrorMessage(e, 'Не вдалося провести оплату карткою'));
         } finally {
             setIsProcessing(false);
@@ -391,7 +479,7 @@ export default function PaymentPage() {
     async function handleConfirm3DS() {
         const token = getAuthToken();
 
-        if (!token || !payment) {
+        if (!token || !checkout) {
             router.replace('/registration');
             return;
         }
@@ -403,13 +491,16 @@ export default function PaymentPage() {
 
             const response = await PaymentService.confirm3DS(
                 token,
-                payment._id,
+                checkout._id,
                 threeDsCode,
             );
 
-            setPayment(response.payment);
+            setCheckout(response.checkout);
+            setActiveStep(paymentSteps.length - 1);
+            setFailedStep(null);
             setSuccess(response.message || '3DS підтверджено');
         } catch (e: any) {
+            markFailedStep(2);
             setError(getErrorMessage(e, 'Не вдалося підтвердити 3DS'));
         } finally {
             setIsProcessing(false);
@@ -430,7 +521,7 @@ export default function PaymentPage() {
         );
     }
 
-    if (error && !payment) {
+    if (error && !checkout) {
         return (
             <Page>
                 <PageContainer>
@@ -440,9 +531,7 @@ export default function PaymentPage() {
         );
     }
 
-    if (!payment) return null;
-
-    const isPaid = payment.status === 'paid_test';
+    if (!checkout) return null;
 
     return (
         <Page>
@@ -451,8 +540,8 @@ export default function PaymentPage() {
                     <div>
                         <PageTitle>Local Market Pay</PageTitle>
                         <PageDescription>
-                            Реалістична імітація оплати для навчального
-                            маркетплейсу. Реальні кошти не списуються.
+                            Реалістична імітація оплати для навчального маркетплейсу.
+                            Реальні кошти не списуються.
                         </PageDescription>
                     </div>
 
@@ -466,33 +555,46 @@ export default function PaymentPage() {
 
                 <PaymentGrid>
                     <PaymentPanel>
-                        <PaymentStatusBadge $status={payment.status}>
-                            {getStatusLabel(payment)}
+                        <PaymentStatusBadge $status={getBadgeStatus(currentStatus)}>
+                            {getStatusLabel(currentStatus)}
                         </PaymentStatusBadge>
 
-                        <h2>{isPaid ? 'Оплату підтверджено' : 'Оплата замовлення'}</h2>
+                        <h2>
+                            {isPaid ? 'Оплату підтверджено' : 'Оплата замовлення'}
+                        </h2>
 
                         <p>
                             Сума до оплати:{' '}
                             <strong>
-                                {formatPrice(Number(payment.totalAmount || 0))}{' '}
-                                {payment.currency}
+                                {formatPrice(Number(checkout.totalAmount || 0))}{' '}
+                                {checkout.currency}
                             </strong>
                         </p>
 
                         <StepsList>
-                            {paymentSteps.map((step, index) => (
-                                <StepItem
-                                    key={step}
-                                    $active={index <= activeStep || isPaid}
-                                >
-                                    <span>{index + 1}</span>
-                                    {step}
-                                </StepItem>
-                            ))}
+                            {paymentSteps.map((step, index) => {
+                                const isFailedStep = renderedFailedStep === index;
+                                const isCompletedStep = isPaid
+                                    || (renderedFailedStep === null
+                                        ? index <= activeStep
+                                        : index < renderedFailedStep);
+
+                                return (
+                                    <StepItem
+                                        key={step}
+                                        $active={isCompletedStep}
+                                        style={isFailedStep ? failedStepStyle : undefined}
+                                    >
+                                        <span style={isFailedStep ? failedStepMarkerStyle : undefined}>
+                                            {index + 1}
+                                        </span>
+                                        {step}
+                                    </StepItem>
+                                );
+                            })}
                         </StepsList>
 
-                        {payment.method === 'google_pay_simulation' && !isPaid && (
+                        {checkout.paymentMethod === 'google_pay_simulation' && !isPaid && (
                             <GooglePayBox>
                                 <div ref={googlePayButtonRef} />
 
@@ -504,7 +606,7 @@ export default function PaymentPage() {
                             </GooglePayBox>
                         )}
 
-                        {payment.method === 'card_simulation' && !isPaid && (
+                        {checkout.paymentMethod === 'card_simulation' && !isPaid && (
                             <>
                                 <CardForm onSubmit={handleCardSubmit}>
                                     <label>
@@ -526,7 +628,7 @@ export default function PaymentPage() {
                                     </PrimaryButton>
                                 </CardForm>
 
-                                {payment.status === 'requires_action' && (
+                                {currentStatus === 'requires_action' && (
                                     <CardForm>
                                         <label>
                                             3DS-код
@@ -551,7 +653,7 @@ export default function PaymentPage() {
                             </>
                         )}
 
-                        {payment.method === 'cash_on_delivery' && (
+                        {checkout.paymentMethod === 'cash_on_delivery' && (
                             <SuccessBox>
                                 Замовлення оформлено з оплатою при отриманні.
                             </SuccessBox>
@@ -586,54 +688,61 @@ export default function PaymentPage() {
 
                         <SummaryLine>
                             <span>Спосіб оплати</span>
-                            <strong>{getMethodLabel(payment)}</strong>
+                            <strong>{getMethodLabel(checkout.paymentMethod)}</strong>
                         </SummaryLine>
 
                         <SummaryLine>
                             <span>Доставка</span>
-                            <strong>{payment.delivery?.type}</strong>
+                            <strong>{getDeliveryLabel(checkout.delivery?.type)}</strong>
                         </SummaryLine>
 
                         <SummaryLine>
                             <span>Місто</span>
-                            <strong>{payment.delivery?.city || 'Не вказано'}</strong>
+                            <strong>{checkout.delivery?.city || 'Не вказано'}</strong>
                         </SummaryLine>
 
                         <SummaryLine>
                             <span>Отримувач</span>
                             <strong>
-                                {payment.delivery?.receiverName || 'Не вказано'}
+                                {checkout.delivery?.receiverName || 'Не вказано'}
                             </strong>
                         </SummaryLine>
 
                         <SummaryLine>
                             <span>Товар</span>
                             <strong>
-                                {formatPrice(Number(payment.amount || 0))}{' '}
-                                {payment.currency}
+                                {formatPrice(Number(checkout.amount || 0))}{' '}
+                                {checkout.currency}
                             </strong>
                         </SummaryLine>
 
                         <SummaryLine>
                             <span>Комісія</span>
                             <strong>
-                                {formatPrice(Number(payment.serviceFee || 0))}{' '}
-                                {payment.currency}
+                                {formatPrice(Number(checkout.serviceFee || 0))}{' '}
+                                {checkout.currency}
                             </strong>
                         </SummaryLine>
 
                         <SummaryLine $total>
                             <span>Разом</span>
                             <strong>
-                                {formatPrice(Number(payment.totalAmount || 0))}{' '}
-                                {payment.currency}
+                                {formatPrice(Number(checkout.totalAmount || 0))}{' '}
+                                {checkout.currency}
                             </strong>
                         </SummaryLine>
 
-                        {payment.mockTransactionId && (
+                        {payment?.mockTransactionId && (
                             <InfoCard>
                                 <span>Тестова транзакція</span>
                                 <strong>{payment.mockTransactionId}</strong>
+                            </InfoCard>
+                        )}
+
+                        {payment?.failureReason && (
+                            <InfoCard>
+                                <span>Причина помилки</span>
+                                <strong>{payment.failureReason}</strong>
                             </InfoCard>
                         )}
                     </SummaryCard>
