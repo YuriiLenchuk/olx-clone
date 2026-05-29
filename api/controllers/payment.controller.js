@@ -1,5 +1,6 @@
 const Payment = require('../models/payment_model');
 const Checkout = require('../models/checkout_model');
+const Item = require('../models/item_model');
 
 const normalizeCardNumber = cardNumber => {
     return String(cardNumber || '').replace(/\D/g, '');
@@ -216,6 +217,8 @@ const markPaymentAsPaid = async ({ checkout, payment }) => {
 
     await checkout.save();
 
+    await archiveItemForCheckout(checkout);
+
     const populatedCheckout = await populateCheckout(checkout._id);
     const populatedPayment = await populatePayment(payment._id);
 
@@ -223,6 +226,32 @@ const markPaymentAsPaid = async ({ checkout, payment }) => {
         checkout: populatedCheckout,
         payment: populatedPayment,
     };
+};
+
+const archiveItemForCheckout = async checkout => {
+    const archivedItem = await Item.findOneAndUpdate(
+        {
+            _id: checkout.item,
+            $or: [
+                { isArchived: { $ne: true } },
+                { archivedByCheckout: checkout._id },
+            ],
+        },
+        {
+            $set: {
+                isArchived: true,
+                archivedAt: new Date(),
+                archivedByCheckout: checkout._id,
+            },
+        },
+        { new: true },
+    );
+
+    if (!archivedItem) {
+        throw new Error('Цей товар уже недоступний');
+    }
+
+    return archivedItem;
 };
 
 const getPaymentById = async (req, res) => {

@@ -7,6 +7,11 @@ import { useRouter } from 'next/navigation';
 import UserService, { AuthUser } from '@/services/UserService';
 import ItemService from '@/services/ItemService';
 import ChatService, { Chat } from '@/services/ChatService';
+import PaymentService, {
+    Checkout,
+    Payment,
+    PaymentItem,
+} from '@/services/PaymentService';
 import { Item } from '@/services/CategoryService';
 
 import {
@@ -35,9 +40,9 @@ import {
     TextInput,
     TitleBlock,
 } from './styled';
-import {getAuthToken, removeAuthToken} from "@/Utils/authToken";
+import { getAuthToken, removeAuthToken } from '@/Utils/authToken';
 
-type TabId = 'overview' | 'items' | 'chats' | 'transactions' | 'settings';
+type TabId = 'overview' | 'items' | 'chats' | 'transactions' | 'sales' | 'settings';
 
 type ProfileForm = {
     email: string;
@@ -63,6 +68,7 @@ const tabs: Array<{ id: TabId; label: string }> = [
     { id: 'items', label: 'Мої оголошення' },
     { id: 'chats', label: 'Чати' },
     { id: 'transactions', label: 'Транзакції' },
+    { id: 'sales', label: 'Продаж' },
     { id: 'settings', label: 'Налаштування' },
 ];
 
@@ -98,6 +104,72 @@ function getCurrentUserId(token: string) {
     } catch {
         return '';
     }
+}
+
+function formatPrice(value?: number) {
+    return new Intl.NumberFormat('uk-UA').format(Number(value || 0));
+}
+
+function getPaymentCheckout(payment: Payment): Checkout | null {
+    if (!payment.checkout || typeof payment.checkout === 'string') return null;
+
+    return payment.checkout;
+}
+
+function getPaymentItem(payment: Payment): PaymentItem | null {
+    if (payment.item && typeof payment.item !== 'string') return payment.item;
+
+    const checkout = getPaymentCheckout(payment);
+
+    if (checkout?.item && typeof checkout.item !== 'string') {
+        return checkout.item;
+    }
+
+    return null;
+}
+
+function getCheckoutId(payment: Payment) {
+    const checkout = getPaymentCheckout(payment);
+
+    return checkout?._id || String(payment.checkout || '');
+}
+
+function getPaymentTotal(payment: Payment) {
+    const checkout = getPaymentCheckout(payment);
+
+    return checkout?.totalAmount ?? payment.amount;
+}
+
+function getPaymentCurrency(payment: Payment) {
+    const checkout = getPaymentCheckout(payment);
+
+    return checkout?.currency || payment.currency || 'UAH';
+}
+
+function getPaymentStatusLabel(payment: Payment) {
+    if (payment.status === 'paid_test') return 'Оплачено';
+    if (payment.status === 'processing') return 'Обробка';
+    if (payment.status === 'requires_action') return 'Очікує 3DS';
+    if (payment.status === 'failed') return 'Помилка';
+    if (payment.status === 'cancelled') return 'Скасовано';
+
+    return 'Очікує оплати';
+}
+
+function getPaymentUserName(user: Payment['buyer'] | Payment['seller']) {
+    if (!user || typeof user === 'string') return 'Користувач';
+
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+
+    return fullName || user.username || 'Користувач';
+}
+
+function getDeliveryLabel(type?: string) {
+    if (type === 'pickup') return 'Самовивіз';
+    if (type === 'delivery') return 'Доставка';
+    if (type === 'agreement') return 'За домовленістю';
+
+    return 'Не вказано';
 }
 
 function ProfileSkeleton() {
@@ -180,6 +252,8 @@ export default function ProfilePage() {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [items, setItems] = useState<Item[]>([]);
     const [chats, setChats] = useState<Chat[]>([]);
+    const [purchasePayments, setPurchasePayments] = useState<Payment[]>([]);
+    const [salesPayments, setSalesPayments] = useState<Payment[]>([]);
 
     const [profileForm, setProfileForm] = useState<ProfileForm>({
         email: '',
@@ -243,9 +317,16 @@ export default function ProfilePage() {
                     username: userData.username || '',
                 });
 
-                const [itemsResult, chatsResult] = await Promise.allSettled([
+                const [
+                    itemsResult,
+                    chatsResult,
+                    purchasesResult,
+                    salesResult,
+                ] = await Promise.allSettled([
                     ItemService.getMyItems(actualToken),
                     ChatService.getMyChats(actualToken),
+                    PaymentService.getMyPayments(actualToken),
+                    PaymentService.getMySalesPayments(actualToken),
                 ]);
 
                 if (!isMounted) return;
@@ -260,6 +341,38 @@ export default function ProfilePage() {
                     setChats(chatsResult.value || []);
                 } else {
                     setChats([]);
+                }
+
+                if (purchasesResult.status === 'fulfilled') {
+                    setPurchasePayments(
+                        (purchasesResult.value || []).filter((payment) => {
+                            if (!currentUserId) return true;
+
+                            if (typeof payment.buyer === 'string') {
+                                return String(payment.buyer) === String(currentUserId);
+                            }
+
+                            return String(payment.buyer?._id) === String(currentUserId);
+                        }),
+                    );
+                } else {
+                    setPurchasePayments([]);
+                }
+
+                if (salesResult.status === 'fulfilled') {
+                    setSalesPayments(
+                        (salesResult.value || []).filter((payment) => {
+                            if (!currentUserId) return true;
+
+                            if (typeof payment.seller === 'string') {
+                                return String(payment.seller) === String(currentUserId);
+                            }
+
+                            return String(payment.seller?._id) === String(currentUserId);
+                        }),
+                    );
+                } else {
+                    setSalesPayments([]);
                 }
             } catch (e: any) {
                 const message = getErrorMessage(e, 'Не вдалося завантажити профіль');
@@ -289,7 +402,7 @@ export default function ProfilePage() {
         return () => {
             isMounted = false;
         };
-    }, [router]);
+    }, [router, currentUserId]);
 
     function logout() {
         removeAuthToken();
@@ -467,13 +580,13 @@ export default function ProfilePage() {
                                 </StatCard>
 
                                 <StatCard>
-                                    <span>Середня оцінка</span>
-                                    <strong>{Number(user?.averageRating || 0).toFixed(1)}</strong>
+                                    <span>Покупки</span>
+                                    <strong>{purchasePayments.length}</strong>
                                 </StatCard>
 
                                 <StatCard>
-                                    <span>Коментарі</span>
-                                    <strong>{user?.reviewsCount || 0}</strong>
+                                    <span>Продажі</span>
+                                    <strong>{salesPayments.length}</strong>
                                 </StatCard>
                             </StatsGrid>
 
@@ -511,7 +624,9 @@ export default function ProfilePage() {
                                 <h2>Мої оголошення</h2>
 
                                 {items.length === 0 ? (
-                                    <EmptyState>У вас ще немає створених оголошень.</EmptyState>
+                                    <EmptyState>
+                                        У вас ще немає створених оголошень.
+                                    </EmptyState>
                                 ) : (
                                     <List>
                                         {items.map((item) => (
@@ -519,8 +634,8 @@ export default function ProfilePage() {
                                                 <div>
                                                     <strong>{item.name}</strong>
                                                     <span>
-                          {item.price} грн · {item.location}
-                        </span>
+                                                        {item.price} грн · {item.location}
+                                                    </span>
                                                 </div>
 
                                                 <Actions>
@@ -581,12 +696,99 @@ export default function ProfilePage() {
                     {activeTab === 'transactions' && (
                         <Section>
                             <InfoCard>
-                                <h2>Транзакції</h2>
+                                <h2>Мої покупки</h2>
 
-                                <EmptyState>
-                                    Транзакції будуть доступні після підключення сторінки оплати,
-                                    замовлень і Google Pay.
-                                </EmptyState>
+                                {purchasePayments.length === 0 ? (
+                                    <EmptyState>
+                                        У вас ще немає транзакцій, де ви покупець.
+                                    </EmptyState>
+                                ) : (
+                                    <List>
+                                        {purchasePayments.map((payment) => {
+                                            const item = getPaymentItem(payment);
+                                            const checkoutId = getCheckoutId(payment);
+
+                                            return (
+                                                <ItemCard key={payment._id}>
+                                                    <div>
+                                                        <strong>{item?.name || 'Оголошення'}</strong>
+                                                        <span>
+                                                            {formatPrice(getPaymentTotal(payment))}{' '}
+                                                            {getPaymentCurrency(payment)} ·{' '}
+                                                            {getPaymentStatusLabel(payment)}
+                                                        </span>
+                                                    </div>
+
+                                                    <Actions>
+                                                        {checkoutId && (
+                                                            <SmallButton
+                                                                type="button"
+                                                                onClick={() => router.push(`/checkout-details/${checkoutId}`)}
+                                                            >
+                                                                Деталі
+                                                            </SmallButton>
+                                                        )}
+                                                    </Actions>
+                                                </ItemCard>
+                                            );
+                                        })}
+                                    </List>
+                                )}
+                            </InfoCard>
+                        </Section>
+                    )}
+
+                    {activeTab === 'sales' && (
+                        <Section>
+                            <InfoCard>
+                                <h2>Продаж</h2>
+
+                                {salesPayments.length === 0 ? (
+                                    <EmptyState>
+                                        Поки немає checkout-ів, де ви продавець.
+                                    </EmptyState>
+                                ) : (
+                                    <List>
+                                        {salesPayments.map((payment) => {
+                                            const item = getPaymentItem(payment);
+                                            const checkout = getPaymentCheckout(payment);
+                                            const checkoutId = getCheckoutId(payment);
+
+                                            return (
+                                                <ItemCard key={payment._id}>
+                                                    <div>
+                                                        <strong>{item?.name || 'Оголошення'}</strong>
+                                                        <span>
+                                                            Покупець: {getPaymentUserName(payment.buyer)} ·{' '}
+                                                            {formatPrice(getPaymentTotal(payment))}{' '}
+                                                            {getPaymentCurrency(payment)} ·{' '}
+                                                            {getPaymentStatusLabel(payment)}
+                                                        </span>
+
+                                                        {checkout?.delivery && (
+                                                            <span>
+                                                                Доставка: {getDeliveryLabel(checkout.delivery.type)} ·{' '}
+                                                                {checkout.delivery.city || 'місто не вказано'} ·{' '}
+                                                                {checkout.delivery.receiverName || 'отримувача не вказано'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <Actions>
+                                                        {checkoutId && (
+                                                            <SmallButton
+                                                                type="button"
+                                                                onClick={() => router.push(`/checkout-details/${checkoutId}`)}
+                                                            >
+                                                                Деталі
+                                                            </SmallButton>
+                                                        )}
+                                                    </Actions>
+                                                </ItemCard>
+                                            );
+                                        })}
+                                    </List>
+                                )}
                             </InfoCard>
                         </Section>
                     )}
@@ -677,7 +879,9 @@ export default function ProfilePage() {
                                         </Field>
                                     </Grid>
 
-                                    <PrimaryButton type="submit">Зберегти профіль</PrimaryButton>
+                                    <PrimaryButton type="submit">
+                                        Зберегти профіль
+                                    </PrimaryButton>
                                 </form>
                             </InfoCard>
 
@@ -697,7 +901,9 @@ export default function ProfilePage() {
                                         />
                                     </Field>
 
-                                    <PrimaryButton type="submit">Оновити логін</PrimaryButton>
+                                    <PrimaryButton type="submit">
+                                        Оновити логін
+                                    </PrimaryButton>
                                 </form>
                             </InfoCard>
 
@@ -749,7 +955,9 @@ export default function ProfilePage() {
                                         </Field>
                                     </Grid>
 
-                                    <PrimaryButton type="submit">Оновити пароль</PrimaryButton>
+                                    <PrimaryButton type="submit">
+                                        Оновити пароль
+                                    </PrimaryButton>
                                 </form>
                             </InfoCard>
 

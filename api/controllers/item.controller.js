@@ -40,32 +40,68 @@ const normalizePageLimit = query => {
     return { page, limit, skip };
 };
 
+const escapeRegExp = value => {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 const getAllItems = async (req, res) => {
-    let { page, limit } = req.query;
-
-    page = parseInt(page, 10) || 1;
-    limit = parseInt(limit, 10) || 10;
-    const skip = (page - 1) * limit;
-
     try {
-        const items = await Item.find()
+        const { page, limit, search, sort } = req.query;
+        const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
+        const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+        const skip = (normalizedPage - 1) * normalizedLimit;
+        console.log(search)
+        const filter = {
+            isArchived: { $ne: true },
+        };
+
+        const normalizedSearch = String(search || '').trim();
+
+        if (normalizedSearch) {
+            const searchRegex = new RegExp(escapeRegExp(normalizedSearch), 'i');
+
+            filter.$or = [
+                { name: searchRegex },
+                { description: searchRegex },
+                { location: searchRegex },
+                { 'categoryData.category': searchRegex },
+                { 'categoryData.subcategory': searchRegex },
+            ];
+        }
+
+        const sortOptions =
+            sort === 'price'
+                ? { price: 1 }
+                : sort === '-price'
+                    ? { price: -1 }
+                    : sort === 'date'
+                        ? { date: 1 }
+                        : { date: -1 };
+
+        const items = await Item.find(filter)
+            .sort(sortOptions)
             .select('-__v')
             .populate({
                 path: 'owner',
                 select: '-_id -password -roles -__v',
             })
             .skip(skip)
-            .limit(limit);
+            .limit(normalizedLimit);
 
-        const totalItems = await Item.countDocuments();
+        const totalItems = await Item.countDocuments(filter);
 
-        return res
-            .status(200)
-            .json({ items, page, limit, totalPages: Math.ceil(totalItems / limit), totalItems });
+        return res.status(200).json({
+            items,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages: Math.ceil(totalItems / normalizedLimit),
+            totalItems,
+        });
     } catch (err) {
-        return res
-            .status(500)
-            .json({ message: 'Помилка при отриманні товарів', error: err.message });
+        return res.status(500).json({
+            message: 'Помилка при отриманні товарів',
+            error: err.message,
+        });
     }
 };
 
@@ -74,34 +110,62 @@ const getItemByCategory = async (req, res) => {
         const { name } = req.params;
         const { page, limit, sort } = req.query;
 
-        const skip = ((parseInt(page, 10) || 1) - 1) * (parseInt(limit, 10) || 10);
+        const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
+        const normalizedLimit = Math.min(
+            Math.max(parseInt(limit, 10) || 10, 1),
+            100,
+        );
+        const skip = (normalizedPage - 1) * normalizedLimit;
 
         if (!name) {
-            return res.status(400).json({ error: 'Параметр "name" є обовʼязковим.' });
+            return res.status(400).json({
+                error: 'Параметр "name" є обовʼязковим.',
+            });
         }
 
         const filter = {
-            $or: [{ 'categoryData.category': name }, { 'categoryData.subcategory': name }],
+            isArchived: { $ne: true },
+            $or: [
+                { 'categoryData.category': name },
+                { 'categoryData.subcategory': name },
+            ],
         };
 
-        const items = await Item.find()
-            .sort(sort)
+        const sortOptions =
+            sort === 'price'
+                ? { price: 1 }
+                : sort === '-price'
+                    ? { price: -1 }
+                    : sort === 'date'
+                        ? { date: 1 }
+                        : { date: -1 };
+
+        const items = await Item.find(filter)
+            .sort(sortOptions)
             .select('-__v')
             .populate({
                 path: 'owner',
                 select: '-_id -password -roles -__v',
             })
             .skip(skip)
-            .limit(parseInt(limit, 10) || 10);
+            .limit(normalizedLimit);
 
         const totalItems = await Item.countDocuments(filter);
 
-        return res
-            .status(200)
-            .json({ items, page, limit, totalPages: Math.ceil(totalItems / limit), totalItems });
+        return res.status(200).json({
+            items,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages: Math.ceil(totalItems / normalizedLimit),
+            totalItems,
+        });
     } catch (err) {
         console.error('Помилка при пошуку товарів:', err);
-        res.status(500).json({ error: 'Внутрішня помилка сервера.' });
+
+        return res.status(500).json({
+            error: 'Внутрішня помилка сервера.',
+            message: err.message,
+        });
     }
 };
 
@@ -113,7 +177,10 @@ const getItemById = async (req, res) => {
         limit = parseInt(limit, 10) || 10;
         const skip = (page - 1) * limit;
 
-        const items = await Item.findById(req.params.id)
+        const items = await Item.findOne({
+            _id: req.params.id,
+            isArchived: { $ne: true },
+        })
             .select('-__v')
             .populate({
                 path: 'owner',
@@ -334,6 +401,7 @@ const getMyItems = async (req, res) => {
 
         const filter = {
             owner: req.user.id,
+            isArchived: { $ne: true },
         };
 
         const items = await Item.find(filter)

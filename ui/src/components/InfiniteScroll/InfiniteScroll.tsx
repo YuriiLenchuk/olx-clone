@@ -5,15 +5,17 @@ import { CategoryService, Item } from "@/services/CategoryService";
 import ItemCard from "@/components/ItemCard/page";
 import {ItemsGrid} from './styled'
 import Cookies from "js-cookie";
+import {useSearchParams} from "next/navigation";
 
 type Props = {
     initialItems: Item[];
     totalPages: number;
-    category: string;
+    category?: string | undefined;
     selected: string;
+    search?: string;
 };
 
-export default function InfiniteScroll({ initialItems, totalPages, category, selected }: Props) {
+export default function InfiniteScroll({ initialItems, totalPages, category, selected, search}: Props) {
     const [items, setItems] = useState<Item[]>(initialItems);
     const [page, setPage] = useState(1);
     const loaderRef = useRef<HTMLDivElement | null>(null);
@@ -25,9 +27,14 @@ export default function InfiniteScroll({ initialItems, totalPages, category, sel
            if (isFetching.current) return;
            isFetching.current = true;
 
-           const { items: newItems } = await CategoryService.getItemsByCategory(category, sort, page);
+           if (category){
+               const { items: newItems } = await CategoryService.getItemsByCategory(category, sort, page);
+               setItems((prev) => reset ? newItems : [...prev, ...newItems]);
+           } else {
+               const { items: newItems } = await CategoryService.getItems(search, sort, page);
+               setItems((prev) => reset ? newItems : [...prev, ...newItems]);
+           }
 
-           setItems((prev) => reset ? newItems : [...prev, ...newItems]);
            isFetching.current = false;
        } catch (error) {
            console.error(error);
@@ -53,10 +60,9 @@ export default function InfiniteScroll({ initialItems, totalPages, category, sel
         };
     }, [page, totalPages]);
 
-    // 🔹 Підвантаження при зміні сторінки
     useEffect(() => {
         if (page > 1) fetchItems(page, selected);
-    }, [page]);
+    }, [page, search]);
 
 
     useEffect(() => {
@@ -65,7 +71,7 @@ export default function InfiniteScroll({ initialItems, totalPages, category, sel
             fetchItems(1, selected, true);
             prevSelected.current = selected;
         }
-    }, [selected]);
+    }, [selected, search]);
     return (
         <ItemsGrid>
             {items.map((item) => {

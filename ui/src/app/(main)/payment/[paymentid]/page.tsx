@@ -7,7 +7,7 @@ import CheckoutService from '@/services/CheckoutService';
 import PaymentService, {
     Payment,
     PaymentItem,
-    PaymentMethod,
+    PaymentMethod, PaymentResponse,
     PaymentStatus,
 } from '@/services/PaymentService';
 import { getAuthToken } from '@/Utils/authToken';

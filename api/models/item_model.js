@@ -47,6 +47,19 @@ const ItemSchema = new mongoose.Schema({
             required: false,
         },
     },
+    isArchived: {
+        type: Boolean,
+        default: false,
+    },
+    archivedAt: {
+        type: Date,
+        default: null,
+    },
+    archivedByCheckout: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Checkout',
+        default: null,
+    },
 });
 
 module.exports = mongoose.model('Item', ItemSchema);

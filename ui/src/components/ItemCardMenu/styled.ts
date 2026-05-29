@@ -10,4 +10,8 @@ const StyledSort = styled.div`
     
 `
 
-export {StyledSort}
+const StyledHr = styled.hr`
+    margin: 30px 121px
+`
+
+export {StyledSort, StyledHr}

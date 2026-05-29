@@ -65,12 +65,41 @@ class CategoryService {
             throw new ErrorHandler(e?.response?.data);
         }
     }
-    
+
     static getItemById = async (id: string): Promise<Item> => {
         try {
             const response = await api.get(`/item/${id}`);
 
             return response.data.item || response.data.items || response.data;
+        } catch (e: any) {
+            console.log(e, 'error');
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
+
+    static getItems = async (
+        search: string = '',
+        sort: string = '',
+        page: number = 1,
+        limit: number = 12,
+    ): Promise<CategoryGroup> => {
+        try {
+            const params = new URLSearchParams();
+
+            params.set('page', String(page));
+            params.set('limit', String(limit));
+
+            if (search.trim()) {
+                params.set('search', search.trim());
+            }
+
+            if (sort) {
+                params.set('sort', sort);
+            }
+
+            const response = await api.get(`/item?${params.toString()}`);
+
+            return response.data;
         } catch (e: any) {
             console.log(e, 'error');
             throw new ErrorHandler(e?.response?.data);

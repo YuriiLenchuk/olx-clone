@@ -80,6 +80,12 @@ const createCheckout = async (req, res) => {
             });
         }
 
+        if (item.isArchived) {
+            return res.status(409).json({
+                message: 'Цей товар уже куплено або він недоступний',
+            });
+        }
+
         const sellerId = getEntityId(item.owner);
         const buyerId = String(req.user.id);
 
@@ -120,6 +126,16 @@ const createCheckout = async (req, res) => {
             },
             paidAt: method === 'cash_on_delivery' ? new Date() : null,
         });
+
+        if (method === 'cash_on_delivery') {
+            await Item.findByIdAndUpdate(item._id, {
+                $set: {
+                    isArchived: true,
+                    archivedAt: new Date(),
+                    archivedByCheckout: checkout._id,
+                },
+            });
+        }
 
         const populatedCheckout = await populateCheckout(checkout._id);
 

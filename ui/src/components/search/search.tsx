@@ -1,5 +1,8 @@
 'use client';
 
+import {FormEvent, useState} from 'react';
+import {useRouter} from 'next/navigation';
+
 import {
     HeroContent,
     SearchHint,
@@ -9,7 +12,26 @@ import {
     StyledSearchInput,
 } from './styled';
 
-export default function Search() {
+interface SearchProps {
+    setSearch?: (value: (((prevState: string) => string) | string)) => void
+}
+
+export default function Search({setSearch}: SearchProps) {
+    const router = useRouter();
+    const [query, setQuery] = useState('');
+
+    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        const normalizedQuery = query.trim();
+
+        if (!normalizedQuery) return;
+        if (setSearch) {
+            setSearch(encodeURIComponent(normalizedQuery));
+        }
+        router.push(`/search?search=${encodeURIComponent(normalizedQuery)}`);
+    }
+
     return (
         <StyledSearch>
             <HeroContent>
@@ -20,9 +42,11 @@ export default function Search() {
                 </p>
             </HeroContent>
 
-            <StyledSearchForm>
+            <StyledSearchForm onSubmit={handleSubmit}>
                 <StyledSearchInput
                     type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
                     placeholder="Що шукаємо? Наприклад: велосипед, ноутбук, диван..."
                 />
                 <StyledSearchButton type="submit">Шукати</StyledSearchButton>
