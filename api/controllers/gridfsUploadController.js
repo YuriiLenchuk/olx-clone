@@ -5,7 +5,6 @@ const fs = require('fs');
 
 const conn = mongoose.connection;
 
-// eslint-disable-next-line consistent-return
 async function uploadToGridFS(req, res, next) {
     try {
         req.body.img = [];
@@ -23,26 +22,27 @@ async function uploadToGridFS(req, res, next) {
             return res.status(400).json({ error: `Невірний тип файлу: ${invalid.originalname}` });
         }
 
-        // Ініціалізуємо GridFSBucket (за замовчуванням collection 'fs')
         const bucket = new GridFSBucket(conn.db, { bucketName: 'uploads' });
 
-        files.map(async file => {
-            const dateObj = new Date();
-            const date = `${dateObj.getDate()}${
-                dateObj.getMonth() + 1
-            }${dateObj.getFullYear()}${dateObj.getHours()}${dateObj.getMinutes()}`;
-            req.body.img.push((date + file.originalname).toString());
-            await new Promise((resolve, reject) => {
-                const readableStream = Readable.from(file.buffer);
-                readableStream
-                    .pipe(bucket.openUploadStream(date + file.originalname))
-                    .on('error', reject)
-                    .on('finish', () => {
-                        console.log(`✅ Image uploaded: ${file.originalname}`);
-                        resolve();
-                    });
-            });
-        });
+        await Promise.all(
+            files.map(async file => {
+                const dateObj = new Date();
+                const date = `${dateObj.getDate()}${
+                    dateObj.getMonth() + 1
+                }${dateObj.getFullYear()}${dateObj.getHours()}${dateObj.getMinutes()}`;
+                req.body.img.push((date + file.originalname).toString());
+                await new Promise((resolve, reject) => {
+                    const readableStream = Readable.from(file.buffer);
+                    readableStream
+                        .pipe(bucket.openUploadStream(date + file.originalname))
+                        .on('error', reject)
+                        .on('finish', () => {
+                            console.log(`✅ Image uploaded: ${file.originalname}`);
+                            resolve();
+                        });
+                });
+            }),
+        );
 
         next();
     } catch (err) {

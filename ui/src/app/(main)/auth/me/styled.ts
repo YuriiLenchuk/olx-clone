@@ -1,6 +1,42 @@
 'use client';
 
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
+
+const panelEnter = keyframes`
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+`;
+
+const fadeIn = keyframes`
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+`;
+
+const skeletonPulse = keyframes`
+    0% {
+        opacity: 0.55;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.55;
+    }
+`;
 
 export const Page = styled.main`
     min-height: 100vh;
@@ -105,6 +141,11 @@ export const TabButton = styled.button<{ $active?: boolean }>`
 export const Section = styled.section`
     display: grid;
     gap: 18px;
+    animation: ${panelEnter} 170ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
 `;
 
 export const StatsGrid = styled.div`
@@ -389,4 +430,52 @@ export const EmptyState = styled.div<{ $danger?: boolean; $success?: boolean }>`
     line-height: 1.5;
     font-weight: 900;
     text-align: center;
+`;
+
+export const ContentFade = styled.div`
+    animation: ${fadeIn} 240ms ease-out both;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+`;
+
+export const SkeletonBlock = styled.div<{
+    $width?: string;
+    $height?: string;
+    $radius?: string;
+}>`
+    width: ${({ $width }) => $width || '100%'};
+    height: ${({ $height }) => $height || '16px'};
+
+    background: linear-gradient(
+        90deg,
+        rgba(232, 225, 214, 0.65),
+        rgba(248, 245, 239, 0.95),
+        rgba(232, 225, 214, 0.65)
+    );
+    border-radius: ${({ $radius }) => $radius || '999px'};
+
+    animation: ${skeletonPulse} 1.15s ease-in-out infinite;
+`;
+
+export const SkeletonGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+
+    @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+export const SkeletonInfoItem = styled.div`
+    padding: 14px;
+
+    background: #f8f5ef;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 18px;
+
+    display: grid;
+    gap: 10px;
 `;

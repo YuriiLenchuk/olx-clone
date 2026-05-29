@@ -1,18 +1,50 @@
 const Item = require('../models/item_model');
-const {log} = require("debug");
 
-function isAdmin(req) {
+const isAdmin = req => {
     return Array.isArray(req.user?.roles) && req.user.roles.includes('ADMIN');
-}
+};
 
-function isOwner(item, req) {
-    return String(item) === String(req.user?.id);
-}
+const isItemOwner = (item, userId) => {
+    return String(item.owner) === String(userId);
+};
+
+const canManageItem = (req, item) => {
+    return isAdmin(req) || isItemOwner(item, req.user?.id);
+};
+
+const parseBoolean = value => {
+    if (value === true || value === 'true') return true;
+    if (value === false || value === 'false') return false;
+    return value;
+};
+
+const parseCategoryData = categoryData => {
+    if (!categoryData) return null;
+
+    if (typeof categoryData === 'string') {
+        try {
+            return JSON.parse(categoryData);
+        } catch {
+            throw new Error('categoryData має бути валідним JSON');
+        }
+    }
+
+    return categoryData;
+};
+
+const normalizePageLimit = query => {
+    const page = Math.max(parseInt(query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 100);
+    const skip = (page - 1) * limit;
+
+    return { page, limit, skip };
+};
+
 const getAllItems = async (req, res) => {
     let { page, limit } = req.query;
 
-    page = parseInt(page, 10) || 1; // номер сторінки
-    limit = parseInt(limit, 10) || 10; // кількість елементів на сторінку
+    page = parseInt(page, 10) || 1;
+    limit = parseInt(limit, 10) || 10;
     const skip = (page - 1) * limit;
 
     try {
@@ -37,7 +69,6 @@ const getAllItems = async (req, res) => {
     }
 };
 
-// eslint-disable-next-line consistent-return
 const getItemByCategory = async (req, res) => {
     try {
         const { name } = req.params;
@@ -74,13 +105,12 @@ const getItemByCategory = async (req, res) => {
     }
 };
 
-// GET /api/items/:id — отримати один товар
 const getItemById = async (req, res) => {
     try {
         let { page, limit } = req.query;
 
-        page = parseInt(page, 10) || 1; // номер сторінки
-        limit = parseInt(limit, 10) || 10; // кількість елементів на сторінку
+        page = parseInt(page, 10) || 1;
+        limit = parseInt(limit, 10) || 10;
         const skip = (page - 1) * limit;
 
         const items = await Item.findById(req.params.id)
@@ -94,7 +124,7 @@ const getItemById = async (req, res) => {
 
         if (!items) return res.status(404).json({ message: 'Товар не знайдено' });
         const totalItems = await Item.countDocuments();
-
+        console.log(items);
         return res
             .status(200)
             .json({ items, page, limit, totalPages: Math.ceil(totalItems / limit), totalItems });
@@ -117,16 +147,13 @@ function validateInfo(req) {
 
     return errors;
 }
-// POST /api/items — створити новий товар
+
 const createItem = async (req, res) => {
     try {
-        // eslint-disable-next-line no-unused-expressions
-        req.body.isNewState === 'true'
-            ? (req.body.isNewState = true)
-            : (req.body.isNewState = false);
+        req.body.isNewState = req.body.newState === 'true';
 
         const { name, img, description, price, isNewState, location, categoryData } = req.body;
-        // Валідація обов'язкових полів
+
         const validatedInfo = await validateInfo(req);
         console.log(validatedInfo);
         console.log(req.body);
@@ -150,16 +177,27 @@ const createItem = async (req, res) => {
         const savedItem = await newItem.save();
         return res.status(201).json(savedItem);
     } catch (err) {
-        console.log(err)
         return res
             .status(400)
             .json({ message: 'Помилка при створенні товару', error: err.message });
     }
 };
 
-// DELETE /api/items/:id — видалити товар
 const deleteItem = async (req, res) => {
     try {
+        const item = await Item.findById(req.params.id);
+
+        if (!item) {
+            return res.status(404).json({
+                message: 'Товар не знайдено',
+            });
+        }
+
+        if (!canManageItem(req, item)) {
+            return res.status(403).json({
+                message: 'Ви можете видаляти тільки власні товари',
+            });
+        }
         const deletedItem = await Item.findByIdAndDelete(req.params.id);
         if (!deletedItem) return res.status(404).json({ message: 'Товар не знайдено' });
         return res.status(200).json({ message: 'Товар успішно видалено' });
@@ -170,36 +208,86 @@ const deleteItem = async (req, res) => {
     }
 };
 
-// PUT /api/items/:id — оновити товар
 const updateItem = async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;
 
-        console.log(req);
+        const item = await Item.findById(id);
 
-        // Якщо передано categoryData, перевіримо, що category обов'язкове
-        if (updateData.categoryData && typeof updateData.categoryData.category !== 'string') {
-            return res.status(400).json({
-                message: 'Поле category у categoryData є обов’язковим і має бути рядком',
+        if (!item) {
+            return res.status(404).json({
+                message: 'Товар не знайдено',
             });
         }
-        console.log(updateData);
 
-        const updatedItem = await Item.findByIdAndUpdate(id, updateData, {
-            new: true, // повернути оновлений документ
-            runValidators: true, // запустити валідацію
-        });
-
-        if (!updatedItem) {
-            return res.status(404).json({ message: 'Товар не знайдено' });
+        if (!canManageItem(req, item)) {
+            return res.status(403).json({
+                message: 'Ви можете редагувати тільки власні товари',
+            });
         }
 
-        return res.status(200).json(updatedItem);
+        const updateData = { ...req.body };
+
+        delete updateData._id;
+        delete updateData.owner;
+        delete updateData.__v;
+        delete updateData.date;
+
+        if (Object.prototype.hasOwnProperty.call(updateData, 'price')) {
+            const normalizedPrice = Number(updateData.price);
+
+            if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
+                return res.status(400).json({
+                    message: 'Поле price має бути коректним числом',
+                });
+            }
+
+            updateData.price = normalizedPrice;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(updateData, 'isNewState')) {
+            const normalizedIsNewState = parseBoolean(updateData.isNewState);
+
+            if (typeof normalizedIsNewState !== 'boolean') {
+                return res.status(400).json({
+                    message: 'Поле isNewState має бути boolean',
+                });
+            }
+
+            updateData.isNewState = normalizedIsNewState;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(updateData, 'categoryData')) {
+            const normalizedCategoryData = parseCategoryData(updateData.categoryData);
+
+            if (!normalizedCategoryData || typeof normalizedCategoryData.category !== 'string') {
+                return res.status(400).json({
+                    message: 'Поле category у categoryData є обов’язковим і має бути рядком',
+                });
+            }
+
+            updateData.categoryData = normalizedCategoryData;
+        }
+
+        const updatedItem = await Item.findByIdAndUpdate(id, updateData, {
+            new: true,
+            runValidators: true,
+        })
+            .select('-__v')
+            .populate({
+                path: 'owner',
+                select: '-password -roles -__v',
+            });
+
+        return res.status(200).json({
+            message: 'Товар оновлено',
+            item: updatedItem,
+        });
     } catch (err) {
-        return res
-            .status(400)
-            .json({ message: 'Помилка при оновленні товару', error: err.message });
+        return res.status(400).json({
+            message: 'Помилка при оновленні товару',
+            error: err.message,
+        });
     }
 };
 

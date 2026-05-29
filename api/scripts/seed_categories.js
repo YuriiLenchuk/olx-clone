@@ -1,5 +1,3 @@
-// seed_categories.js
-
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
@@ -151,7 +149,6 @@ const seed = async () => {
 
         const nameToId = new Map();
 
-        // eslint-disable-next-line no-restricted-syntax
         for (const category of categories) {
             const { name, path: slug, imagePath } = category;
             let photoFilename = null;
@@ -159,12 +156,10 @@ const seed = async () => {
             if (imagePath) {
                 photoFilename = path.basename(imagePath);
 
-                // eslint-disable-next-line no-await-in-loop
                 const exists = await db
                     .collection('uploads.files')
                     .findOne({ filename: photoFilename });
                 if (!exists) {
-                    // eslint-disable-next-line no-await-in-loop
                     await new Promise((resolve, reject) => {
                         fs.createReadStream(imagePath)
                             .pipe(bucket.openUploadStream(photoFilename))
@@ -177,23 +172,17 @@ const seed = async () => {
                 }
             }
 
-            // eslint-disable-next-line no-await-in-loop
             const doc = await Category.create({ name, path: slug, photoFilename });
-            // eslint-disable-next-line no-underscore-dangle
             nameToId.set(name, doc._id);
         }
 
-        // Додати підкатегорії
-        // eslint-disable-next-line no-restricted-syntax
         for (const category of categories) {
             const { subcategoryNames = [] } = category;
-            // eslint-disable-next-line no-continue
             if (!subcategoryNames.length) continue;
 
             const parentId = nameToId.get(category.name);
             const subcategoryIds = subcategoryNames.map(name => nameToId.get(name)).filter(Boolean);
 
-            // eslint-disable-next-line no-await-in-loop
             await Category.findByIdAndUpdate(parentId, {
                 $set: { subcategories: subcategoryIds },
             });

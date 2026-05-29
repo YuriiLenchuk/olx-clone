@@ -28,10 +28,14 @@ import {
     StatsGrid,
     TabButton,
     Tabs,
-    TextArea,
+    ContentFade,
+    SkeletonBlock,
+    SkeletonGrid,
+    SkeletonInfoItem,
     TextInput,
     TitleBlock,
 } from './styled';
+import {getAuthToken, removeAuthToken} from "@/Utils/authToken";
 
 type TabId = 'overview' | 'items' | 'chats' | 'transactions' | 'settings';
 
@@ -63,7 +67,7 @@ const tabs: Array<{ id: TabId; label: string }> = [
 ];
 
 function getToken() {
-    return Cookies.get('authToken') || '';
+    return getAuthToken() || '';
 }
 
 function getErrorMessage(error: any, fallback: string) {
@@ -94,6 +98,78 @@ function getCurrentUserId(token: string) {
     } catch {
         return '';
     }
+}
+
+function ProfileSkeleton() {
+    return (
+        <Page>
+            <PageContainer>
+                <ContentFade>
+                    <Header>
+                        <TitleBlock>
+                            <SkeletonBlock $width="160px" $height="16px" />
+
+                            <div style={{ marginTop: 10 }}>
+                                <SkeletonBlock $width="340px" $height="54px" />
+                            </div>
+
+                            <div style={{ marginTop: 14 }}>
+                                <SkeletonBlock $width="620px" $height="18px" />
+                            </div>
+
+                            <div style={{ marginTop: 8 }}>
+                                <SkeletonBlock $width="480px" $height="18px" />
+                            </div>
+                        </TitleBlock>
+
+                        <Actions>
+                            <SkeletonBlock $width="160px" $height="42px" />
+                            <SkeletonBlock $width="90px" $height="42px" />
+                        </Actions>
+                    </Header>
+
+                    <Tabs>
+                        {tabs.map((tab) => (
+                            <SkeletonBlock
+                                key={tab.id}
+                                $width="130px"
+                                $height="44px"
+                                $radius="16px"
+                            />
+                        ))}
+                    </Tabs>
+
+                    <Section>
+                        <StatsGrid>
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <StatCard key={index}>
+                                    <SkeletonBlock $width="110px" $height="14px" />
+                                    <div style={{ marginTop: 12 }}>
+                                        <SkeletonBlock $width="72px" $height="34px" />
+                                    </div>
+                                </StatCard>
+                            ))}
+                        </StatsGrid>
+
+                        <InfoCard>
+                            <SkeletonBlock $width="190px" $height="30px" />
+
+                            <div style={{ marginTop: 16 }}>
+                                <SkeletonGrid>
+                                    {Array.from({ length: 4 }).map((_, index) => (
+                                        <SkeletonInfoItem key={index}>
+                                            <SkeletonBlock $width="90px" $height="14px" />
+                                            <SkeletonBlock $width="70%" $height="18px" />
+                                        </SkeletonInfoItem>
+                                    ))}
+                                </SkeletonGrid>
+                            </div>
+                        </InfoCard>
+                    </Section>
+                </ContentFade>
+            </PageContainer>
+        </Page>
+    );
 }
 
 export default function ProfilePage() {
@@ -134,25 +210,25 @@ export default function ProfilePage() {
     const currentUserId = useMemo(() => getCurrentUserId(token), [token]);
 
     useEffect(() => {
-        async function loadCabinet() {
-            try {
-                if (!token) {
-                    router.push('/registration');
-                    return;
-                }
+        let isMounted = true;
 
+        async function loadCabinet() {
+            const actualToken = getAuthToken();
+
+            if (!actualToken) {
+                router.replace('/registration');
+                return;
+            }
+
+            try {
                 setIsLoading(true);
                 setError('');
 
-                const [userData, itemsData, chatsData] = await Promise.all([
-                    UserService.me(token),
-                    ItemService.getMyItems(token),
-                    ChatService.getMyChats(token),
-                ]);
+                const userData = await UserService.me(actualToken);
+
+                if (!isMounted) return;
 
                 setUser(userData);
-                setItems(itemsData.items || []);
-                setChats(chatsData || []);
 
                 setProfileForm({
                     email: userData.email || '',
@@ -166,18 +242,57 @@ export default function ProfilePage() {
                 setUsernameForm({
                     username: userData.username || '',
                 });
+
+                const [itemsResult, chatsResult] = await Promise.allSettled([
+                    ItemService.getMyItems(actualToken),
+                    ChatService.getMyChats(actualToken),
+                ]);
+
+                if (!isMounted) return;
+
+                if (itemsResult.status === 'fulfilled') {
+                    setItems(itemsResult.value.items || []);
+                } else {
+                    setItems([]);
+                }
+
+                if (chatsResult.status === 'fulfilled') {
+                    setChats(chatsResult.value || []);
+                } else {
+                    setChats([]);
+                }
             } catch (e: any) {
-                setError(getErrorMessage(e, 'Не вдалося завантажити профіль'));
+                const message = getErrorMessage(e, 'Не вдалося завантажити профіль');
+
+                if (
+                    message.toLowerCase().includes('авториз') ||
+                    message.toLowerCase().includes('token') ||
+                    message.toLowerCase().includes('jwt')
+                ) {
+                    removeAuthToken();
+                    router.replace('/registration');
+                    return;
+                }
+
+                if (isMounted) {
+                    setError(message);
+                }
             } finally {
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         }
 
         loadCabinet();
-    }, [router, token]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [router]);
 
     function logout() {
-        Cookies.remove('authToken');
+        removeAuthToken();
         router.push('/home');
     }
 
@@ -280,7 +395,7 @@ export default function ProfilePage() {
                 currentPassword: deletePassword,
             });
 
-            Cookies.remove('authToken');
+            removeAuthToken();
             router.push('/home');
         } catch (e: any) {
             setError(getErrorMessage(e, 'Не вдалося видалити акаунт'));
@@ -294,377 +409,369 @@ export default function ProfilePage() {
     }
 
     if (isLoading) {
-        return (
-            <Page>
-                <PageContainer>
-                    <EmptyState>Завантаження профілю...</EmptyState>
-                </PageContainer>
-            </Page>
-        );
+        return <ProfileSkeleton />;
     }
 
     return (
         <Page>
             <PageContainer>
-                <Header>
-                    <TitleBlock>
-                        <span>Особистий кабінет</span>
-                        <h1>{getUserName(user)}</h1>
-                        <p>
-                            Керуйте профілем, оголошеннями, чатами, транзакціями та
-                            налаштуваннями акаунта.
-                        </p>
-                    </TitleBlock>
+                <ContentFade>
+                    <Header>
+                        <TitleBlock>
+                            <span>Особистий кабінет</span>
+                            <h1>{getUserName(user)}</h1>
+                        </TitleBlock>
 
-                    <Actions>
-                        <SmallButton type="button" onClick={() => router.push('/ad')}>
-                            Створити оголошення
-                        </SmallButton>
+                        <Actions>
+                            <SmallButton type="button" onClick={() => router.push('/ad')}>
+                                Створити оголошення
+                            </SmallButton>
 
-                        <DangerButton type="button" onClick={logout}>
-                            Вийти
-                        </DangerButton>
-                    </Actions>
-                </Header>
+                            <DangerButton type="button" onClick={logout}>
+                                Вийти
+                            </DangerButton>
+                        </Actions>
+                    </Header>
 
-                <Tabs>
-                    {tabs.map((tab) => (
-                        <TabButton
-                            key={tab.id}
-                            type="button"
-                            $active={activeTab === tab.id}
-                            onClick={() => {
-                                setActiveTab(tab.id);
-                                setError('');
-                                setMessage('');
-                            }}
-                        >
-                            {tab.label}
-                        </TabButton>
-                    ))}
-                </Tabs>
+                    <Tabs>
+                        {tabs.map((tab) => (
+                            <TabButton
+                                key={tab.id}
+                                type="button"
+                                $active={activeTab === tab.id}
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    setError('');
+                                    setMessage('');
+                                }}
+                            >
+                                {tab.label}
+                            </TabButton>
+                        ))}
+                    </Tabs>
 
-                {error && <EmptyState $danger>{error}</EmptyState>}
-                {message && <EmptyState $success>{message}</EmptyState>}
+                    {error && <EmptyState $danger>{error}</EmptyState>}
+                    {message && <EmptyState $success>{message}</EmptyState>}
 
-                {activeTab === 'overview' && (
-                    <Section>
-                        <StatsGrid>
-                            <StatCard>
-                                <span>Оголошення</span>
-                                <strong>{items.length}</strong>
-                            </StatCard>
+                    {activeTab === 'overview' && (
+                        <Section>
+                            <StatsGrid>
+                                <StatCard>
+                                    <span>Оголошення</span>
+                                    <strong>{items.length}</strong>
+                                </StatCard>
 
-                            <StatCard>
-                                <span>Чати</span>
-                                <strong>{chats.length}</strong>
-                            </StatCard>
+                                <StatCard>
+                                    <span>Чати</span>
+                                    <strong>{chats.length}</strong>
+                                </StatCard>
 
-                            <StatCard>
-                                <span>Середня оцінка</span>
-                                <strong>{Number(user?.averageRating || 0).toFixed(1)}</strong>
-                            </StatCard>
+                                <StatCard>
+                                    <span>Середня оцінка</span>
+                                    <strong>{Number(user?.averageRating || 0).toFixed(1)}</strong>
+                                </StatCard>
 
-                            <StatCard>
-                                <span>Коментарі</span>
-                                <strong>{user?.reviewsCount || 0}</strong>
-                            </StatCard>
-                        </StatsGrid>
+                                <StatCard>
+                                    <span>Коментарі</span>
+                                    <strong>{user?.reviewsCount || 0}</strong>
+                                </StatCard>
+                            </StatsGrid>
 
-                        <InfoCard>
-                            <h2>Дані профілю</h2>
+                            <InfoCard>
+                                <h2>Дані профілю</h2>
 
-                            <Grid>
-                                <p>
-                                    <span>Логін</span>
-                                    <strong>{user?.username}</strong>
-                                </p>
+                                <Grid>
+                                    <p>
+                                        <span>Логін</span>
+                                        <strong>{user?.username}</strong>
+                                    </p>
 
-                                <p>
-                                    <span>Email</span>
-                                    <strong>{user?.email || 'Не вказано'}</strong>
-                                </p>
+                                    <p>
+                                        <span>Email</span>
+                                        <strong>{user?.email || 'Не вказано'}</strong>
+                                    </p>
 
-                                <p>
-                                    <span>Телефон</span>
-                                    <strong>{user?.phone || 'Не вказано'}</strong>
-                                </p>
+                                    <p>
+                                        <span>Телефон</span>
+                                        <strong>{user?.phone || 'Не вказано'}</strong>
+                                    </p>
 
-                                <p>
-                                    <span>Місто</span>
-                                    <strong>{user?.city || 'Не вказано'}</strong>
-                                </p>
-                            </Grid>
-                        </InfoCard>
-                    </Section>
-                )}
+                                    <p>
+                                        <span>Місто</span>
+                                        <strong>{user?.city || 'Не вказано'}</strong>
+                                    </p>
+                                </Grid>
+                            </InfoCard>
+                        </Section>
+                    )}
 
-                {activeTab === 'items' && (
-                    <Section>
-                        <InfoCard>
-                            <h2>Мої оголошення</h2>
+                    {activeTab === 'items' && (
+                        <Section>
+                            <InfoCard>
+                                <h2>Мої оголошення</h2>
 
-                            {items.length === 0 ? (
-                                <EmptyState>У вас ще немає створених оголошень.</EmptyState>
-                            ) : (
-                                <List>
-                                    {items.map((item) => (
-                                        <ItemCard key={item._id}>
-                                            <div>
-                                                <strong>{item.name}</strong>
-                                                <span>
+                                {items.length === 0 ? (
+                                    <EmptyState>У вас ще немає створених оголошень.</EmptyState>
+                                ) : (
+                                    <List>
+                                        {items.map((item) => (
+                                            <ItemCard key={item._id}>
+                                                <div>
+                                                    <strong>{item.name}</strong>
+                                                    <span>
                           {item.price} грн · {item.location}
                         </span>
-                                            </div>
-
-                                            <Actions>
-                                                <SmallButton
-                                                    type="button"
-                                                    onClick={() => router.push(`/obyava/${item._id}`)}
-                                                >
-                                                    Переглянути
-                                                </SmallButton>
-                                            </Actions>
-                                        </ItemCard>
-                                    ))}
-                                </List>
-                            )}
-                        </InfoCard>
-                    </Section>
-                )}
-
-                {activeTab === 'chats' && (
-                    <Section>
-                        <InfoCard>
-                            <h2>Мої чати</h2>
-
-                            {chats.length === 0 ? (
-                                <EmptyState>У вас поки немає чатів.</EmptyState>
-                            ) : (
-                                <List>
-                                    {chats.map((chat) => {
-                                        const companion = getCompanion(chat);
-
-                                        return (
-                                            <ItemCard key={chat._id}>
-                                                <div>
-                                                    <strong>{getChatUserName(companion)}</strong>
-                                                    <span>
-                            {chat.item?.name || 'Оголошення'} ·{' '}
-                                                        {chat.lastMessageText || 'Повідомлень ще немає'}
-                          </span>
                                                 </div>
 
                                                 <Actions>
                                                     <SmallButton
                                                         type="button"
-                                                        onClick={() => router.push(`/chats/${chat._id}`)}
+                                                        onClick={() => router.push(`/obyava/${item._id}`)}
                                                     >
-                                                        Відкрити чат
+                                                        Переглянути
                                                     </SmallButton>
                                                 </Actions>
                                             </ItemCard>
-                                        );
-                                    })}
-                                </List>
-                            )}
-                        </InfoCard>
-                    </Section>
-                )}
+                                        ))}
+                                    </List>
+                                )}
+                            </InfoCard>
+                        </Section>
+                    )}
 
-                {activeTab === 'transactions' && (
-                    <Section>
-                        <InfoCard>
-                            <h2>Транзакції</h2>
+                    {activeTab === 'chats' && (
+                        <Section>
+                            <InfoCard>
+                                <h2>Мої чати</h2>
 
-                            <EmptyState>
-                                Транзакції будуть доступні після підключення сторінки оплати,
-                                замовлень і Google Pay.
-                            </EmptyState>
-                        </InfoCard>
-                    </Section>
-                )}
+                                {chats.length === 0 ? (
+                                    <EmptyState>У вас поки немає чатів.</EmptyState>
+                                ) : (
+                                    <List>
+                                        {chats.map((chat) => {
+                                            const companion = getCompanion(chat);
 
-                {activeTab === 'settings' && (
-                    <Section>
-                        <InfoCard>
-                            <h2>Редагування профілю</h2>
+                                            return (
+                                                <ItemCard key={chat._id}>
+                                                    <div>
+                                                        <strong>{getChatUserName(companion)}</strong>
+                                                        <span>
+                                                            {chat.item?.name || 'Оголошення'} ·{' '}
+                                                            {chat.lastMessageText || 'Повідомлень ще немає'}
+                                                        </span>
+                                                    </div>
 
-                            <form onSubmit={handleProfileUpdate}>
-                                <Grid>
+                                                    <Actions>
+                                                        <SmallButton
+                                                            type="button"
+                                                            onClick={() => router.push(`/chats/${chat._id}`)}
+                                                        >
+                                                            Відкрити чат
+                                                        </SmallButton>
+                                                    </Actions>
+                                                </ItemCard>
+                                            );
+                                        })}
+                                    </List>
+                                )}
+                            </InfoCard>
+                        </Section>
+                    )}
+
+                    {activeTab === 'transactions' && (
+                        <Section>
+                            <InfoCard>
+                                <h2>Транзакції</h2>
+
+                                <EmptyState>
+                                    Транзакції будуть доступні після підключення сторінки оплати,
+                                    замовлень і Google Pay.
+                                </EmptyState>
+                            </InfoCard>
+                        </Section>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <Section>
+                            <InfoCard>
+                                <h2>Редагування профілю</h2>
+
+                                <form onSubmit={handleProfileUpdate}>
+                                    <Grid>
+                                        <Field>
+                                            <label>Email</label>
+                                            <TextInput
+                                                value={profileForm.email}
+                                                onChange={(event) =>
+                                                    setProfileForm((prev) => ({
+                                                        ...prev,
+                                                        email: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
+
+                                        <Field>
+                                            <label>Ім’я</label>
+                                            <TextInput
+                                                value={profileForm.firstName}
+                                                onChange={(event) =>
+                                                    setProfileForm((prev) => ({
+                                                        ...prev,
+                                                        firstName: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
+
+                                        <Field>
+                                            <label>Прізвище</label>
+                                            <TextInput
+                                                value={profileForm.lastName}
+                                                onChange={(event) =>
+                                                    setProfileForm((prev) => ({
+                                                        ...prev,
+                                                        lastName: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
+
+                                        <Field>
+                                            <label>Телефон</label>
+                                            <TextInput
+                                                value={profileForm.phone}
+                                                onChange={(event) =>
+                                                    setProfileForm((prev) => ({
+                                                        ...prev,
+                                                        phone: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
+
+                                        <Field>
+                                            <label>Місто</label>
+                                            <TextInput
+                                                value={profileForm.city}
+                                                onChange={(event) =>
+                                                    setProfileForm((prev) => ({
+                                                        ...prev,
+                                                        city: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
+
+                                        <Field>
+                                            <label>Аватар URL</label>
+                                            <TextInput
+                                                value={profileForm.avatar}
+                                                onChange={(event) =>
+                                                    setProfileForm((prev) => ({
+                                                        ...prev,
+                                                        avatar: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
+                                    </Grid>
+
+                                    <PrimaryButton type="submit">Зберегти профіль</PrimaryButton>
+                                </form>
+                            </InfoCard>
+
+                            <InfoCard>
+                                <h2>Зміна логіна</h2>
+
+                                <form onSubmit={handleUsernameUpdate}>
                                     <Field>
-                                        <label>Email</label>
+                                        <label>Новий логін</label>
                                         <TextInput
-                                            value={profileForm.email}
+                                            value={usernameForm.username}
                                             onChange={(event) =>
-                                                setProfileForm((prev) => ({
-                                                    ...prev,
-                                                    email: event.target.value,
-                                                }))
+                                                setUsernameForm({
+                                                    username: event.target.value,
+                                                })
                                             }
                                         />
                                     </Field>
 
-                                    <Field>
-                                        <label>Ім’я</label>
-                                        <TextInput
-                                            value={profileForm.firstName}
-                                            onChange={(event) =>
-                                                setProfileForm((prev) => ({
-                                                    ...prev,
-                                                    firstName: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
+                                    <PrimaryButton type="submit">Оновити логін</PrimaryButton>
+                                </form>
+                            </InfoCard>
 
-                                    <Field>
-                                        <label>Прізвище</label>
-                                        <TextInput
-                                            value={profileForm.lastName}
-                                            onChange={(event) =>
-                                                setProfileForm((prev) => ({
-                                                    ...prev,
-                                                    lastName: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
+                            <InfoCard>
+                                <h2>Зміна пароля</h2>
 
-                                    <Field>
-                                        <label>Телефон</label>
-                                        <TextInput
-                                            value={profileForm.phone}
-                                            onChange={(event) =>
-                                                setProfileForm((prev) => ({
-                                                    ...prev,
-                                                    phone: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
+                                <form onSubmit={handlePasswordUpdate}>
+                                    <Grid>
+                                        <Field>
+                                            <label>Поточний пароль</label>
+                                            <TextInput
+                                                type="password"
+                                                value={passwordForm.currentPassword}
+                                                onChange={(event) =>
+                                                    setPasswordForm((prev) => ({
+                                                        ...prev,
+                                                        currentPassword: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
 
-                                    <Field>
-                                        <label>Місто</label>
-                                        <TextInput
-                                            value={profileForm.city}
-                                            onChange={(event) =>
-                                                setProfileForm((prev) => ({
-                                                    ...prev,
-                                                    city: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
+                                        <Field>
+                                            <label>Новий пароль</label>
+                                            <TextInput
+                                                type="password"
+                                                value={passwordForm.newPassword}
+                                                onChange={(event) =>
+                                                    setPasswordForm((prev) => ({
+                                                        ...prev,
+                                                        newPassword: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
 
-                                    <Field>
-                                        <label>Аватар URL</label>
-                                        <TextInput
-                                            value={profileForm.avatar}
-                                            onChange={(event) =>
-                                                setProfileForm((prev) => ({
-                                                    ...prev,
-                                                    avatar: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
-                                </Grid>
+                                        <Field>
+                                            <label>Повторіть новий пароль</label>
+                                            <TextInput
+                                                type="password"
+                                                value={passwordForm.repeatPassword}
+                                                onChange={(event) =>
+                                                    setPasswordForm((prev) => ({
+                                                        ...prev,
+                                                        repeatPassword: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </Field>
+                                    </Grid>
 
-                                <PrimaryButton type="submit">Зберегти профіль</PrimaryButton>
-                            </form>
-                        </InfoCard>
+                                    <PrimaryButton type="submit">Оновити пароль</PrimaryButton>
+                                </form>
+                            </InfoCard>
 
-                        <InfoCard>
-                            <h2>Зміна логіна</h2>
+                            <InfoCard $danger>
+                                <h2>Видалення акаунта</h2>
 
-                            <form onSubmit={handleUsernameUpdate}>
                                 <Field>
-                                    <label>Новий логін</label>
+                                    <label>Пароль для підтвердження</label>
                                     <TextInput
-                                        value={usernameForm.username}
-                                        onChange={(event) =>
-                                            setUsernameForm({
-                                                username: event.target.value,
-                                            })
-                                        }
+                                        type="password"
+                                        value={deletePassword}
+                                        onChange={(event) => setDeletePassword(event.target.value)}
                                     />
                                 </Field>
 
-                                <PrimaryButton type="submit">Оновити логін</PrimaryButton>
-                            </form>
-                        </InfoCard>
-
-                        <InfoCard>
-                            <h2>Зміна пароля</h2>
-
-                            <form onSubmit={handlePasswordUpdate}>
-                                <Grid>
-                                    <Field>
-                                        <label>Поточний пароль</label>
-                                        <TextInput
-                                            type="password"
-                                            value={passwordForm.currentPassword}
-                                            onChange={(event) =>
-                                                setPasswordForm((prev) => ({
-                                                    ...prev,
-                                                    currentPassword: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
-
-                                    <Field>
-                                        <label>Новий пароль</label>
-                                        <TextInput
-                                            type="password"
-                                            value={passwordForm.newPassword}
-                                            onChange={(event) =>
-                                                setPasswordForm((prev) => ({
-                                                    ...prev,
-                                                    newPassword: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
-
-                                    <Field>
-                                        <label>Повторіть новий пароль</label>
-                                        <TextInput
-                                            type="password"
-                                            value={passwordForm.repeatPassword}
-                                            onChange={(event) =>
-                                                setPasswordForm((prev) => ({
-                                                    ...prev,
-                                                    repeatPassword: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </Field>
-                                </Grid>
-
-                                <PrimaryButton type="submit">Оновити пароль</PrimaryButton>
-                            </form>
-                        </InfoCard>
-
-                        <InfoCard $danger>
-                            <h2>Видалення акаунта</h2>
-
-                            <Field>
-                                <label>Пароль для підтвердження</label>
-                                <TextInput
-                                    type="password"
-                                    value={deletePassword}
-                                    onChange={(event) => setDeletePassword(event.target.value)}
-                                />
-                            </Field>
-
-                            <DangerButton type="button" onClick={handleDeleteAccount}>
-                                Видалити акаунт
-                            </DangerButton>
-                        </InfoCard>
-                    </Section>
-                )}
+                                <DangerButton type="button" onClick={handleDeleteAccount}>
+                                    Видалити акаунт
+                                </DangerButton>
+                            </InfoCard>
+                        </Section>
+                    )}
+                </ContentFade>
             </PageContainer>
         </Page>
     );

@@ -45,7 +45,6 @@ async function deleteImgs(req, res) {
     try {
         const { ids } = req.body;
 
-        // eslint-disable-next-line consistent-return
         ids.map(async id => {
             if (!ObjectId.isValid(id)) {
                 return res.status(400).json({ error: 'Невірний ID файлу' });

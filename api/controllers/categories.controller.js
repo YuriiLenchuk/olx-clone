@@ -6,7 +6,7 @@ const getCategories = async (req, res) => {
             photoFilename: { $exists: true, $ne: null },
         }).populate({
             path: 'subcategories',
-            select: 'name path -_id', // вибираємо лише name і path без _id
+            select: 'name path -_id',
         });
 
         const rez = categories.map(cat => ({

@@ -4,6 +4,7 @@ import "../globals.css";
 import StyledComponentsRegistry from "@/app/lib/registry";
 import React from "react";
 import Header from "@/components/header/header";
+import RouteTransition from "@/components/routeTransition/routeTransition";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +21,7 @@ export default function RootLayout({
   return (
       <>
           <Header/>
-          <main>{children}</main>
+          <RouteTransition>{children}</RouteTransition>
       </>
   );
 }

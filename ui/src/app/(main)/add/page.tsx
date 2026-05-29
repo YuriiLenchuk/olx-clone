@@ -39,6 +39,7 @@ import {
     TextInput,
     UploadBox,
 } from './styled';
+import {getAuthToken} from "@/Utils/authToken";
 
 type FormState = {
     name: string;
@@ -61,7 +62,7 @@ const initialForm: FormState = {
 };
 
 function getToken() {
-    return Cookies.get('authToken') || '';
+    return getAuthToken() || '';
 }
 
 function getErrorMessage(error: any, fallback: string) {

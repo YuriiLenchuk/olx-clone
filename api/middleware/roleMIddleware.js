@@ -1,10 +1,7 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 const jwt = require('jsonwebtoken');
 const { secret } = require('../config');
 
-// eslint-disable-next-line consistent-return
 module.exports = roles => {
-    // eslint-disable-next-line consistent-return
     return (req, res, next) => {
         if (req.method === 'OPTIONS') next();
 

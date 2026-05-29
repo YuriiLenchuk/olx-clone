@@ -14,11 +14,13 @@ const {
 
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMIddleware');
+const authLimiter = require('../middleware/authLimiter');
 
 const router = express.Router();
 
 router.post(
     '/registration',
+    authLimiter,
     [
         check('username', 'Імʼя користувача не може бути пустим').notEmpty(),
         check('username', 'Імʼя користувача має містити мінімум 3 символи').isLength({
@@ -33,13 +35,14 @@ router.post(
     registration,
 );
 
-router.post('/login', login);
+router.post('/login', authLimiter, login);
 
 router.get('/me', authMiddleware, me);
 
 router.patch(
     '/me',
     authMiddleware,
+    authLimiter,
     [check('email', 'Некоректний email').optional({ checkFalsy: true }).isEmail()],
     updateMe,
 );

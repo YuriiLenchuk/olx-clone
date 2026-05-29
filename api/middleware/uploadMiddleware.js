@@ -1,9 +1,7 @@
 const multer = require('multer');
 
-// Зберігання у пам'ять
 const storage = multer.memoryStorage();
 
-// Дозволені типи
 const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
 
 const fileFilter = (req, file, cb) => {

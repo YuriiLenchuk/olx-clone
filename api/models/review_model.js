@@ -17,7 +17,7 @@ const ReviewSchema = new mongoose.Schema(
         },
 
         item: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: String,
             ref: 'Item',
             default: null,
         },

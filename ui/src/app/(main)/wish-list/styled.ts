@@ -1,6 +1,6 @@
 'use client';
 
-import styled from 'styled-components';
+import styled, {keyframes} from 'styled-components';
 
 export const Page = styled.main`
   min-height: 100vh;
@@ -233,4 +233,79 @@ export const ErrorCard = styled.div`
 
   font-size: 16px;
   text-align: center;
+`;
+
+const skeletonPulse = keyframes`
+    0% {
+        opacity: 0.55;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.55;
+    }
+`;
+
+export const ContentFade = styled.div`
+    animation: fadeIn 240ms ease-out both;
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+`;
+
+export const SkeletonBlock = styled.div<{
+    $width?: string;
+    $height?: string;
+    $radius?: string;
+}>`
+    width: ${({ $width }) => $width || '100%'};
+    height: ${({ $height }) => $height || '16px'};
+
+    background: linear-gradient(
+        90deg,
+        rgba(232, 225, 214, 0.65),
+        rgba(248, 245, 239, 0.95),
+        rgba(232, 225, 214, 0.65)
+    );
+    border-radius: ${({ $radius }) => $radius || '999px'};
+
+    animation: ${skeletonPulse} 1.15s ease-in-out infinite;
+`;
+
+export const WishlistSkeletonCard = styled.article`
+    padding: 14px;
+
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 18px;
+
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 24px;
+    box-shadow: 0 18px 42px rgba(35, 45, 39, 0.08);
+
+    @media (max-width: 680px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+export const WishlistSkeletonInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
 `;

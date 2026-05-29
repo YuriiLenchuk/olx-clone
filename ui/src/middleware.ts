@@ -1,11 +1,28 @@
-import {NextResponse} from "next/server";
-import type {NextRequest} from "next/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-const protectedRoutes = ["/ad"]
+const protectedPrefixes = ['/add', '/chats', '/auth/me', '/payment'];
+
 export default function middleware(req: NextRequest) {
-    const authToken = req.cookies.get("authToken");
-    if(!authToken && protectedRoutes.includes(req.nextUrl.pathname)){
-        const absoluteURL = new URL("/registration", req.nextUrl.origin);
-        return NextResponse.redirect(absoluteURL.toString());
+    const authToken = req.cookies.get('authToken')?.value;
+    const { pathname } = req.nextUrl;
+
+    const isProtectedRoute = protectedPrefixes.some(
+        route => pathname === route || pathname.startsWith(`${route}/`),
+    );
+
+    if (!authToken && isProtectedRoute) {
+        const redirectUrl = req.nextUrl.clone();
+
+        redirectUrl.pathname = '/registration';
+        redirectUrl.searchParams.set('redirect', pathname);
+
+        return NextResponse.redirect(redirectUrl);
     }
+
+    return NextResponse.next();
 }
+
+export const config = {
+    matcher: ['/add/:path*', '/chats/:path*', '/auth/me/:path*', '/payment/:path*'],
+};

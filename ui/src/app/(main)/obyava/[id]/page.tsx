@@ -38,6 +38,7 @@ import {
     Title,
     TopSection,
 } from './styled';
+import {getAuthToken} from "@/Utils/authToken";
 
 const IMAGE_URL = 'http://localhost:3005/img/';
 
@@ -113,20 +114,20 @@ export default function ItemPage() {
     function handleBuy() {
         if (!item) return;
 
-        const token = Cookies.get('authToken');
+        const token = getAuthToken();
 
         if (!token) {
             router.push('/registration');
             return;
         }
 
-        router.push(`/checkout/${item._id}`);
+        router.push(`/payment/${item._id}`);
     }
 
     async function handleContactSeller() {
         if (!item) return;
 
-        const token = Cookies.get('authToken');
+        const token = getAuthToken();
 
         if (!token) {
             router.push('/registration');

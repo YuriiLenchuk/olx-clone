@@ -5,9 +5,27 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user_model');
 const { secret } = require('../config');
 
+const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 12;
+
+const hashPassword = password =>
+    new Promise((resolve, reject) => {
+        bcrypt.hash(password, SALT_ROUNDS, (err, hash) => {
+            if (err) reject(err);
+            else resolve(hash);
+        });
+    });
+
+const comparePassword = (password, hash) =>
+    new Promise((resolve, reject) => {
+        bcrypt.compare(password, hash, (err, isValid) => {
+            if (err) reject(err);
+            else resolve(isValid);
+        });
+    });
+
 const generateAccessToken = (id, roles) => {
     const payload = { id, roles };
-    return jwt.sign(payload, secret, { expiresIn: '24h' });
+    return jwt.sign(payload, secret, { expiresIn: '7d' });
 };
 
 const getSafeUser = user => ({
@@ -57,11 +75,11 @@ const registration = async (req, res) => {
             }
         }
 
-        const hashPassword = bcrypt.hashSync(password, 7);
+        const hashedPassword = await hashPassword(password);
 
         const user = new User({
             username,
-            password: hashPassword,
+            password: hashedPassword,
             email,
             firstName,
             lastName,
@@ -93,7 +111,11 @@ const login = async (req, res) => {
 
         const user = await User.findOne({ username });
 
-        if (!user || !bcrypt.compareSync(password, user.password)) {
+        const isPasswordValid = user
+            ? await comparePassword(password, user.password)
+            : false;
+
+        if (!user || !isPasswordValid) {
             return res.status(400).json({
                 message: 'Невірне імʼя користувача або пароль',
             });
@@ -150,14 +172,7 @@ const getUsers = async (req, res) => {
 
 const updateMe = async (req, res) => {
     try {
-        const {
-            email,
-            firstName,
-            lastName,
-            phone,
-            city,
-            avatar,
-        } = req.body;
+        const { email, firstName, lastName, phone, city, avatar } = req.body;
 
         const user = await User.findById(req.user.id);
 
@@ -272,7 +287,7 @@ const updatePassword = async (req, res) => {
             });
         }
 
-        const isPasswordValid = bcrypt.compareSync(currentPassword, user.password);
+        const isPasswordValid = await comparePassword(currentPassword, user.password);
 
         if (!isPasswordValid) {
             return res.status(400).json({
@@ -280,7 +295,7 @@ const updatePassword = async (req, res) => {
             });
         }
 
-        user.password = bcrypt.hashSync(newPassword, 7);
+        user.password = user.password = await hashPassword(newPassword);
 
         await user.save();
 

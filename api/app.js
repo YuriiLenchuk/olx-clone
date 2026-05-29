@@ -4,12 +4,8 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const helmet = require('helmet');
 const chatRouter = require('./routes/chat');
-
-const corsOptions = {
-    origin: ['http://localhost:3000'],
-    credentials: true,
-};
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
@@ -18,12 +14,36 @@ const categoryRouter = require('./routes/category');
 const ImgRouter = require('./routes/image');
 const ItemRouter = require('./routes/item');
 const reviewRouter = require('./routes/review');
+const paymentRouter = require('./routes/payment');
 
 const app = express();
 
+const allowedOrigins = [
+    process.env.CLIENT_URL || 'http://localhost:3000',
+];
+
+const corsOptions = {
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+};
+
+app.set('trust proxy', 1);
+
+app.use(
+    helmet({
+        crossOriginResourcePolicy: {
+            policy: 'cross-origin',
+        },
+    }),
+);
 app.use(cors(corsOptions));
 
-// view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
@@ -41,19 +61,16 @@ app.use('/img', ImgRouter);
 app.use('/item', ItemRouter);
 app.use('/reviews', reviewRouter);
 app.use('/chats', chatRouter);
+app.use('/payments', paymentRouter);
 
-// catch 404 and forward to error handler
 app.use((req, res, next) => {
     next(createError(404));
 });
 
-// error handler
 app.use((err, req, res, next) => {
-    // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-    // render the error page
     res.status(err.status || 500);
     res.render('error');
 });

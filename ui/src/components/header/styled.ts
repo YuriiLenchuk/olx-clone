@@ -111,3 +111,63 @@ export const ActionButton = styled.button`
     transform: translateY(0);
   }
 `;
+
+export const ProfileLink = styled(Link)`
+    padding: 10px 14px;
+    border-radius: 999px;
+
+    color: var(--muted);
+
+    transition: 0.18s ease;
+
+    &:hover {
+        color: var(--text);
+        background: var(--surface);
+    }
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+`;
+
+export const ProfileAvatar = styled.span`
+    width: 34px;
+    height: 34px;
+
+    display: grid;
+    place-items: center;
+
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 999px;
+
+    font-size: 14px;
+    font-weight: 950;
+`;
+
+export const ProfileText = styled.span`
+    display: grid;
+    line-height: 1.1;
+
+    span {
+        text-align: end;
+        color: var(--muted, #6f7a73);
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    strong {
+        max-width: 130px;
+        font-size: 14px;
+        font-weight: 700;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 520px) {
+        strong {
+            max-width: 90px;
+        }
+    }
+`;

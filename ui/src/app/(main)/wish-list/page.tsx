@@ -21,10 +21,57 @@ import {
     PageHeader,
     PageTitle,
     StatsBadge,
+    ContentFade,
+    SkeletonBlock,
+    WishlistSkeletonCard,
+    WishlistSkeletonInfo,
 } from './styled';
+import {getAuthToken} from "@/Utils/authToken";
+
+function WishListSkeleton() {
+    return (
+        <Page>
+            <PageContainer>
+                <ContentFade>
+                    <PageHeader>
+                        <div>
+                            <SkeletonBlock $width="340px" $height="46px" />
+                            <div style={{ marginTop: 12 }}>
+                                <SkeletonBlock $width="520px" $height="18px" />
+                            </div>
+                        </div>
+
+                        <HeaderActions>
+                            <SkeletonBlock $width="130px" $height="42px" />
+                        </HeaderActions>
+                    </PageHeader>
+
+                    <ItemsList>
+                        {Array.from({ length: 4 }).map((_, index) => (
+                            <WishlistSkeletonCard key={index}>
+                                <SkeletonBlock
+                                    $width="100%"
+                                    $height="130px"
+                                    $radius="20px"
+                                />
+
+                                <WishlistSkeletonInfo>
+                                    <SkeletonBlock $width="70%" $height="24px" />
+                                    <SkeletonBlock $width="42%" $height="18px" />
+                                    <SkeletonBlock $width="88%" $height="16px" />
+                                    <SkeletonBlock $width="160px" $height="36px" />
+                                </WishlistSkeletonInfo>
+                            </WishlistSkeletonCard>
+                        ))}
+                    </ItemsList>
+                </ContentFade>
+            </PageContainer>
+        </Page>
+    );
+}
 
 function getWishlistIds(): string[] {
-    const cookie = Cookies.get('checked');
+    const cookie = getAuthToken();
 
     if (!cookie) return [];
 
@@ -91,16 +138,8 @@ export default function WishList() {
         return (
             <Page>
                 <PageContainer>
-                    <PageHeader>
-                        <div>
-                            <PageTitle>Збережені оголошення</PageTitle>
-                            <PageDescription>
-                                Тут будуть оголошення, які ви додали в обране.
-                            </PageDescription>
-                        </div>
-                    </PageHeader>
-
-                    <LoadingCard>Завантаження збережених оголошень...</LoadingCard>
+                    <PageHeader>...</PageHeader>
+                    <LoadingCard>Завантаження...</LoadingCard>
                 </PageContainer>
             </Page>
         );

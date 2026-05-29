@@ -28,6 +28,7 @@ import {
     SendButton,
     UserInfo,
 } from './styled';
+import {getAuthToken} from "@/Utils/authToken";
 
 function getCurrentUserId(token: string) {
     try {
@@ -58,7 +59,7 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const token = useMemo(() => Cookies.get('authToken') || '', []);
+    const token = useMemo(() => getAuthToken() || '', []);
     const currentUserId = useMemo(() => getCurrentUserId(token), [token]);
 
     const companion = useMemo(() => {

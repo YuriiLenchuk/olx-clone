@@ -1,7 +1,19 @@
 'use client';
 
-import styled from 'styled-components';
+import styled, {keyframes} from 'styled-components';
 import Link from 'next/link';
+
+export const Wrapper = styled.div`
+    background:
+            radial-gradient(circle at 12% 18%, rgba(242, 189, 87, 0.42), transparent 30%),
+            radial-gradient(circle at 86% 20%, rgba(63, 111, 88, 0.18), transparent 28%),
+            linear-gradient(135deg, #fbf4e4 0%, #edf4ee 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+`
 
 export const WrapperFormContainer = styled.div`
     width: min(440px, calc(100% - 32px));
@@ -257,5 +269,24 @@ export const ForgetPasswordInput = styled(Link)`
         color: var(--primary, #3f6f58);
         text-decoration: underline;
         text-underline-offset: 4px;
+    }
+`;
+
+const panelFade = keyframes`
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+`;
+
+export const VariantPanel = styled.div`
+    animation: ${panelFade} 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    width: min(440px, calc(100% - 32px));
+    margin: 54px auto 80px;
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
     }
 `;

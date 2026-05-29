@@ -20,6 +20,7 @@ import {
     PageTitle,
     UserName,
 } from './styled';
+import {getAuthToken} from "@/Utils/authToken";
 
 const IMAGE_URL = 'http://localhost:3005/img/';
 
@@ -46,7 +47,7 @@ export default function ChatsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const token = useMemo(() => Cookies.get('authToken') || '', []);
+    const token = useMemo(() => getAuthToken() || '', []);
     const currentUserId = useMemo(() => getCurrentUserId(token), [token]);
 
     useEffect(() => {
