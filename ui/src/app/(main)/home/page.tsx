@@ -12,8 +12,7 @@ export default async function Home() {
   return (
       <article>
         <Search />
-            <Categories categories={categories} />
-        <VipAdv />
+        <Categories categories={categories} />
       </article>
   );
 }

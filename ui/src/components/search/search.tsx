@@ -1,7 +1,7 @@
 'use client';
 
-import {FormEvent, useState} from 'react';
-import {useRouter} from 'next/navigation';
+import { FormEvent, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import {
     HeroContent,
@@ -13,12 +13,16 @@ import {
 } from './styled';
 
 interface SearchProps {
-    setSearch?: (value: (((prevState: string) => string) | string)) => void
+    initialValue?: string;
 }
 
-export default function Search({setSearch}: SearchProps) {
+export default function Search({ initialValue = '' }: SearchProps) {
     const router = useRouter();
-    const [query, setQuery] = useState('');
+    const [query, setQuery] = useState(initialValue);
+
+    useEffect(() => {
+        setQuery(initialValue);
+    }, [initialValue]);
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -26,9 +30,7 @@ export default function Search({setSearch}: SearchProps) {
         const normalizedQuery = query.trim();
 
         if (!normalizedQuery) return;
-        if (setSearch) {
-            setSearch(encodeURIComponent(normalizedQuery));
-        }
+
         router.push(`/search?search=${encodeURIComponent(normalizedQuery)}`);
     }
 

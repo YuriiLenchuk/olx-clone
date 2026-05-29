@@ -5,6 +5,7 @@ import StyledComponentsRegistry from "@/app/lib/registry";
 import React from "react";
 import Header from "@/components/header/header";
 import RouteTransition from "@/components/routeTransition/routeTransition";
+import AIAssistant from "@/components/AIAssistant/AIAssistant";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({
       <>
           <Header/>
           <RouteTransition>{children}</RouteTransition>
+          <AIAssistant/>
       </>
   );
 }

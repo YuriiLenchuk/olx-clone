@@ -1,39 +1,49 @@
 "use client";
 
-import { useState, ReactNode} from "react";
-import {StyledSort, StyledHr} from "./styled";
+import { useState, ReactNode } from "react";
+
+import { StyledSort } from "./styled";
 import CustomSelect from "@/components/CustomSelect/CustomSelect";
 import InfiniteScroll from "@/components/InfiniteScroll/InfiniteScroll";
-import {Item} from "@/services/CategoryService";
-import {useSearchParams} from "next/navigation";
-import Search from "@/components/search/search";
+import { Item } from "@/services/CategoryService";
 
 type Option = { value: string; label: ReactNode };
+
 const options: Option[] = [
-    {value: "-date", label: "Найновіші"},
-    {value: "price", label: "Найдешевщі"},
-    {value: "-price", label: "Найдорожчі"},
+    { value: "-date", label: "Найновіші" },
+    { value: "price", label: "Найдешевші" },
+    { value: "-price", label: "Найдорожчі" },
 ];
 
 type Props = {
     initialItems: Item[];
     totalPages: number;
     category?: string;
-}
+    search?: string;
+};
 
-export default function ItemCardMenu({initialItems, totalPages, category}: Props) {
+export default function ItemCardMenu({
+                                         initialItems,
+                                         totalPages,
+                                         category,
+                                         search = '',
+                                     }: Props) {
     const [selected, setSelected] = useState<string>("-date");
-    const [search, setSearch] = useState<string>(useSearchParams().get('search') || '');
 
     return (
         <>
-            <Search setSearch = {setSearch} />
-            <StyledHr/>
             <StyledSort>
                 <span>Сортувати за:</span>
                 <CustomSelect options={options} value={selected} onChange={setSelected} />
             </StyledSort>
-            <InfiniteScroll initialItems={initialItems} totalPages={totalPages} category={category} selected={selected} search={search} />
+
+            <InfiniteScroll
+                initialItems={initialItems}
+                totalPages={totalPages}
+                category={category}
+                selected={selected}
+                search={search}
+            />
         </>
     );
 }

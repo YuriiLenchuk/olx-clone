@@ -1,69 +1,107 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Cookies from "js-cookie";
+
 import { CategoryService, Item } from "@/services/CategoryService";
 import ItemCard from "@/components/ItemCard/page";
-import {ItemsGrid} from './styled'
-import Cookies from "js-cookie";
-import {useSearchParams} from "next/navigation";
+import { ItemsGrid } from './styled';
 
 type Props = {
     initialItems: Item[];
     totalPages: number;
-    category?: string | undefined;
+    category?: string;
     selected: string;
     search?: string;
 };
 
-export default function InfiniteScroll({ initialItems, totalPages, category, selected, search}: Props) {
+function getCheckedIds(): string[] {
+    try {
+        const cookie = Cookies.get('checked');
+
+        if (!cookie) return [];
+
+        const parsed = JSON.parse(cookie);
+
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+export default function InfiniteScroll({
+                                           initialItems,
+                                           totalPages,
+                                           category = '',
+                                           selected,
+                                           search = '',
+                                       }: Props) {
     const [items, setItems] = useState<Item[]>(initialItems);
     const [page, setPage] = useState(1);
+    const [currentTotalPages, setCurrentTotalPages] = useState(totalPages);
+
     const loaderRef = useRef<HTMLDivElement | null>(null);
     const isFetching = useRef(false);
     const prevSelected = useRef(selected);
 
-    const fetchItems = async (page: number, sort: string, reset = false) => {
-       try {
-           if (isFetching.current) return;
-           isFetching.current = true;
+    const requestKey = useMemo(() => {
+        return `${category || ''}:${search || ''}`;
+    }, [category, search]);
 
-           if (category){
-               const { items: newItems } = await CategoryService.getItemsByCategory(category, sort, page);
-               setItems((prev) => reset ? newItems : [...prev, ...newItems]);
-           } else {
-               const { items: newItems } = await CategoryService.getItems(search, sort, page);
-               setItems((prev) => reset ? newItems : [...prev, ...newItems]);
-           }
+    const checkedIds = getCheckedIds();
 
-           isFetching.current = false;
-       } catch (error) {
-           console.error(error);
-       }
+    const fetchItems = async (nextPage: number, sort: string, reset = false) => {
+        try {
+            if (isFetching.current) return;
+
+            isFetching.current = true;
+
+            const response = category
+                ? await CategoryService.getItemsByCategory(category, sort, nextPage)
+                : await CategoryService.getItems(search, sort, nextPage);
+
+            setItems((prev) => reset ? response.items : [...prev, ...response.items]);
+            setCurrentTotalPages(response.totalPages);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            isFetching.current = false;
+        }
     };
 
-    // 🔹 Спостерігаємо за скролом
+    useEffect(() => {
+        setItems(initialItems);
+        setPage(1);
+        setCurrentTotalPages(totalPages);
+        prevSelected.current = selected;
+    }, [initialItems, totalPages, requestKey]);
+
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
                 const target = entries[0];
-                if (target.isIntersecting && page < totalPages) {
+
+                if (target.isIntersecting && page < currentTotalPages && !isFetching.current) {
                     setPage((prev) => prev + 1);
                 }
             },
-            { threshold: 1.0 }
+            { threshold: 1.0 },
         );
 
-        if (loaderRef.current) observer.observe(loaderRef.current);
+        const loader = loaderRef.current;
+
+        if (loader) observer.observe(loader);
 
         return () => {
-            if (loaderRef.current) observer.unobserve(loaderRef.current);
+            if (loader) observer.unobserve(loader);
         };
-    }, [page, totalPages]);
+    }, [page, currentTotalPages]);
 
     useEffect(() => {
-        if (page > 1) fetchItems(page, selected);
-    }, [page, search]);
-
+        if (page > 1) {
+            fetchItems(page, selected);
+        }
+    }, [page]);
 
     useEffect(() => {
         if (prevSelected.current !== selected) {
@@ -71,16 +109,19 @@ export default function InfiniteScroll({ initialItems, totalPages, category, sel
             fetchItems(1, selected, true);
             prevSelected.current = selected;
         }
-    }, [selected, search]);
+    }, [selected]);
+
     return (
         <ItemsGrid>
-            {items.map((item) => {
-                return (<ItemCard key={item._id} item={item} checked={JSON.parse((Cookies.get('checked') || null) as string)?.includes(item._id)} />)
-            })}
+            {items.map((item) => (
+                <ItemCard
+                    key={item._id}
+                    item={item}
+                    checked={checkedIds.includes(item._id)}
+                />
+            ))}
 
-            {/* sentinel */}
             <div ref={loaderRef} style={{ height: "20px" }} />
-
         </ItemsGrid>
     );
 }
