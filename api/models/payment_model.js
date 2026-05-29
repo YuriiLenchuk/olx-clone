@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const PaymentSchema = new mongoose.Schema(
     {
+        checkout: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Checkout',
+            required: true,
+        },
+
         item: {
             type: String,
             ref: 'Item',
@@ -33,19 +39,42 @@ const PaymentSchema = new mongoose.Schema(
 
         method: {
             type: String,
-            enum: ['google_pay_simulation', 'card_simulation'],
-            default: 'google_pay_simulation',
+            enum: ['google_pay_simulation', 'card_simulation', 'cash_on_delivery'],
+            required: true,
         },
 
         status: {
             type: String,
-            enum: ['pending', 'processing', 'requires_action', 'paid', 'failed', 'cancelled'],
-            default: 'pending',
+            enum: [
+                'processing',
+                'requires_action',
+                'paid_test',
+                'failed',
+                'cancelled',
+            ],
+            default: 'processing',
         },
 
-        providerPaymentId: {
+        mockTransactionId: {
             type: String,
             default: null,
+        },
+
+        googlePayInfo: {
+            cardNetwork: {
+                type: String,
+                default: null,
+            },
+
+            cardDetails: {
+                type: String,
+                default: null,
+            },
+
+            description: {
+                type: String,
+                default: null,
+            },
         },
 
         cardInfo: {
@@ -53,6 +82,7 @@ const PaymentSchema = new mongoose.Schema(
                 type: String,
                 default: null,
             },
+
             last4: {
                 type: String,
                 default: null,

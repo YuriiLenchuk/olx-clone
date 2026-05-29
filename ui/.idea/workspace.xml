@@ -5,35 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="62621f5a-b3d4-44d2-ab93-1184b86497f3" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../api/controllers/payment.controller.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(main)/payment/[paymentid]/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(main)/payment/[paymentid]/styled.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../api/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/app.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/controllers/auth.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/controllers/auth.controller.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/controllers/categories.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/controllers/categories.controller.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/controllers/gridfsUploadController.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/controllers/gridfsUploadController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/controllers/image.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/controllers/image.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/controllers/item.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/controllers/item.controller.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/middleware/roleMIddleware.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/middleware/roleMIddleware.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/middleware/uploadMiddleware.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/middleware/uploadMiddleware.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/models/review_model.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/models/review_model.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../api/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../api/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/routes/auth.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/routes/auth.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../api/scripts/seed_categories.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/scripts/seed_categories.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/controllers/paymen.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/models/payment_model.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/models/payment_model.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/routes/payment.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/routes/payment.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/registration/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/registration/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/registration/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/registration/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/add/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/add/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/auth/me/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/auth/me/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/auth/me/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/auth/me/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/chats/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/chats/[id]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/chats/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/chats/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/layout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(main)/obyava/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/obyava/[id]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/wish-list/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/wish-list/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/wish-list/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/wish-list/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/globals.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/header/header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/header/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/header/styled.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/middleware.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(main)/payment/[id]/page.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(main)/payment/[id]/styled.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/PaymentService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/PaymentService.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,7 +134,7 @@
       <workItem from="1779915659907" duration="4604000" />
       <workItem from="1779920411209" duration="1086000" />
       <workItem from="1780060497290" duration="679000" />
-      <workItem from="1780062699042" duration="2067000" />
+      <workItem from="1780062699042" duration="5610000" />
     </task>
     <servers />
   </component>

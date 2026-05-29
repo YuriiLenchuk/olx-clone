@@ -3,18 +3,26 @@ const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const {
-    createPayment,
-    simulatePayment,
-    confirm3DS,
+    getPaymentById,
+    payCheckoutWithGooglePay,
+    simulateCheckoutCardPayment,
+    confirmCheckout3DS,
+    cancelCheckoutPayment,
     getMyPayments,
-} = require('../controllers/paymen.controller');
+    getMySalesPayments,
+} = require('../controllers/payment.controller');
 
 const router = express.Router();
 
 router.get('/my', authMiddleware, getMyPayments);
+router.get('/sales', authMiddleware, getMySalesPayments);
 
-router.post('/', authMiddleware, createPayment);
-router.post('/:id/simulate', authMiddleware, simulatePayment);
-router.post('/:id/confirm-3ds', authMiddleware, confirm3DS);
+router.get('/:id', authMiddleware, getPaymentById);
+
+router.post('/:checkoutId/google-pay', authMiddleware, payCheckoutWithGooglePay);
+router.post('/:checkoutId/card-simulation', authMiddleware, simulateCheckoutCardPayment);
+router.post('/:checkoutId/confirm-3ds', authMiddleware, confirmCheckout3DS);
+
+router.patch('/:checkoutId/cancel', authMiddleware, cancelCheckoutPayment);
 
 module.exports = router;

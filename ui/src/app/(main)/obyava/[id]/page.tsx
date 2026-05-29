@@ -121,7 +121,7 @@ export default function ItemPage() {
             return;
         }
 
-        router.push(`/payment/${item._id}`);
+        router.push(`/checkout/${item._id}`);
     }
 
     async function handleContactSeller() {

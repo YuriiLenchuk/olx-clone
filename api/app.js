@@ -15,6 +15,7 @@ const ImgRouter = require('./routes/image');
 const ItemRouter = require('./routes/item');
 const reviewRouter = require('./routes/review');
 const paymentRouter = require('./routes/payment');
+const checkoutRouter = require('./routes/checkout');
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/item', ItemRouter);
 app.use('/reviews', reviewRouter);
 app.use('/chats', chatRouter);
 app.use('/payments', paymentRouter);
+app.use('/checkout', checkoutRouter);
 
 app.use((req, res, next) => {
     next(createError(404));
