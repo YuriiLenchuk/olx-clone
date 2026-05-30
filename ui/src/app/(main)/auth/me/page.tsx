@@ -46,7 +46,7 @@ import {
     ModalGrid,
     ModalHeader,
     ModalSelect,
-    TextArea,
+    TextArea, StatCardLink,
 } from './styled';
 import { getValidAuthToken, removeAuthToken } from '@/Utils/authToken';
 
@@ -319,6 +319,8 @@ export default function ProfilePage() {
 
     const token = useMemo(() => getToken(), []);
     const currentUserId = useMemo(() => getCurrentUserId(token), [token]);
+    const profileUserId = user?._id || user?.id || currentUserId;
+    const profileReviewsHref = profileUserId ? `/reviews/${profileUserId}` : '#';
 
     useEffect(() => {
         let isMounted = true;
@@ -738,15 +740,15 @@ export default function ProfilePage() {
                                     <strong>{chats.length}</strong>
                                 </StatCard>
 
-                                <StatCard>
-                                    <span>Кількість відгуків</span>
+                                <StatCardLink href={profileReviewsHref}>
+                                    <span>Відгуки</span>
                                     <strong>{user?.reviewsCount || 0}</strong>
-                                </StatCard>
+                                </StatCardLink>
 
-                                <StatCard>
+                                <StatCardLink href={profileReviewsHref}>
                                     <span>Середня оцінка</span>
-                                    <strong>{user?.averageRating || 0.0}</strong>
-                                </StatCard>
+                                    <strong>{Number(user?.averageRating || 0).toFixed(1)}</strong>
+                                </StatCardLink>
                             </StatsGrid>
 
                             <InfoCard>

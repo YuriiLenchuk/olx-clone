@@ -1,5 +1,6 @@
 import api from '@/api';
 import ErrorHandler from '@/services/ErrorHandler';
+import {AuthUser} from "@/services/UserService";
 
 export interface ReviewAuthor {
     _id: string;
@@ -18,7 +19,7 @@ export interface ReviewItem {
 
 export interface Review {
     _id: string;
-    targetUser: string;
+    targetUser: AuthUser;
     author: ReviewAuthor;
     item?: ReviewItem | null;
     rating: number;

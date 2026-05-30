@@ -1,6 +1,7 @@
 'use client';
 
 import styled, { keyframes } from 'styled-components';
+import Link from 'next/link';
 
 const panelEnter = keyframes`
     from {
@@ -184,6 +185,39 @@ export const StatCard = styled.article`
         font-size: 34px;
         line-height: 1;
         font-weight: 950;
+    }
+`;
+
+export const StatCardLink = styled(Link)`
+    padding: 20px;
+    display: block;
+    text-decoration: none;
+
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 24px;
+    box-shadow: 0 16px 34px rgba(35, 45, 39, 0.07);
+    transition: 0.16s ease;
+
+    span {
+        color: var(--muted, #6f7a73);
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    strong {
+        margin-top: 8px;
+        display: block;
+        color: var(--primary-dark, #2d4f3f);
+        font-size: 34px;
+        line-height: 1;
+        font-weight: 950;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: rgba(63, 111, 88, 0.28);
+        box-shadow: 0 18px 38px rgba(35, 45, 39, 0.11);
     }
 `;
 
