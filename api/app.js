@@ -18,6 +18,7 @@ const paymentRouter = require('./routes/payment');
 const checkoutRouter = require('./routes/checkout');
 const assistantRouter = require('./routes/assistant');
 const reportRouter = require('./routes/report');
+const adminRouter = require('./routes/admin');
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use('/payments', paymentRouter);
 app.use('/checkout', checkoutRouter);
 app.use('/assistant', assistantRouter);
 app.use('/reports', reportRouter);
+app.use('/admin', adminRouter);
 
 app.use((req, res, next) => {
     next(createError(404));

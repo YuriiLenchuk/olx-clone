@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import UserService, { AuthUser } from '@/services/UserService';
 import {
@@ -40,7 +40,6 @@ function getInitial(user: AuthUser | null) {
 
 export default function Header() {
     const router = useRouter();
-    const pathname = usePathname();
 
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isAuthChecked, setIsAuthChecked] = useState(false);
@@ -91,7 +90,7 @@ export default function Header() {
 
     useEffect(() => {
         loadUser();
-    }, [loadUser, pathname]);
+    }, [loadUser]);
 
     useEffect(() => {
         function handleAuthChanged() {
@@ -123,6 +122,10 @@ export default function Header() {
 
                 <Nav>
                     <WrapperLink href="/wish-list">Збережене</WrapperLink>
+
+                    {user?.roles?.includes('ADMIN') && (
+                        <WrapperLink href="/admin">Адмін</WrapperLink>
+                    )}
 
                     <ProfileLink href={user ? '/auth/me' : '/registration'}>
                         {user && <ProfileAvatar>{getInitial(user)}</ProfileAvatar>}

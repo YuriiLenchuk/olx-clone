@@ -50,6 +50,39 @@ class ItemService {
             throw new ErrorHandler(e?.response?.data);
         }
     };
+
+    static updateItem = async (
+        token: string,
+        id: string,
+        payload: Partial<Item>,
+    ): Promise<Item> => {
+        try {
+            const response = await api.patch(`/item/${id}`, payload, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            return response.data.item;
+        } catch (e: any) {
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
+
+    static deleteItem = async (
+        token: string,
+        id: string,
+    ): Promise<void> => {
+        try {
+            await api.delete(`/item/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+        } catch (e: any) {
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
 }
 
 export default ItemService;

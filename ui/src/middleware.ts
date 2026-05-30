@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const protectedPrefixes = ['/add', '/chats', '/auth/me', '/payment'];
+const protectedPrefixes = ['/add', '/chats', '/auth/me', '/payment', '/admin'];
 
 export default function middleware(req: NextRequest) {
     const authToken = req.cookies.get('authToken')?.value;
@@ -24,5 +24,5 @@ export default function middleware(req: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/add/:path*', '/chats/:path*', '/auth/me/:path*', '/payment/:path*'],
+    matcher: ['/add/:path*', '/chats/:path*', '/auth/me/:path*', '/payment/:path*', '/admin/:path*'],
 };

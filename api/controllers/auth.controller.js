@@ -121,6 +121,12 @@ const login = async (req, res) => {
             });
         }
 
+        if (user.isBlocked) {
+            return res.status(403).json({
+                message: user.blockedReason || 'Ваш акаунт заблоковано адміністратором',
+            });
+        }
+
         const token = generateAccessToken(user._id, user.roles);
 
         return res.json({

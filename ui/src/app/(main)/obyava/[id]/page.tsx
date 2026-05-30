@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import ChatService from '@/services/ChatService';
+import AdminService from '@/services/AdminService';
+import { getAuthToken, getValidAuthToken } from '@/Utils/authToken';
 import { CategoryService, Item } from '@/services/CategoryService';
 import date from '@/Utils/DateStr';
 import Like from '@/icons/Like';
@@ -46,14 +48,22 @@ import {
     ReportFormActions,
     ReportOption,
     ReportOptions,
-    ReportStatus,
     ReportTextarea,
     SecondaryButton,
     InfoCardTop,
     ReportIconButton,
     PageAlert,
+    AdminActions,
+    AdminButton,
+    AdminDangerButton,
+    AdminEditGrid,
+    AdminField,
+    AdminInput,
+    AdminModalActions,
+    AdminModalCard,
+    AdminSelect,
+    AdminTextarea,
 } from './styled';
-import {getAuthToken} from "@/Utils/authToken";
 import {
     addCompareItem,
     ASSISTANT_COMPARE_UPDATED_EVENT,
@@ -65,8 +75,28 @@ import ReportService, {
     ReportReason,
     REPORT_REASON_OPTIONS,
 } from '@/services/ReportService';
+import ItemService from "@/services/ItemService";
+import UserService from "@/services/UserService";
 
 const IMAGE_URL = 'http://localhost:3005/img/';
+
+type AdminEditForm = {
+    name: string;
+    description: string;
+    price: string;
+    location: string;
+    isNewState: boolean;
+};
+
+function getInitialAdminEditForm(item: Item): AdminEditForm {
+    return {
+        name: item.name || '',
+        description: item.description || '',
+        price: String(item.price || ''),
+        location: item.location || '',
+        isNewState: Boolean(item.isNewState),
+    };
+}
 
 function formatPrice(price: number) {
     return new Intl.NumberFormat('uk-UA').format(price);
@@ -104,6 +134,11 @@ export default function ItemPage() {
     const [reportComment, setReportComment] = useState('');
     const [isReportSubmitting, setIsReportSubmitting] = useState(false);
     const [reportError, setReportError] = useState('');
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdminEditOpen, setIsAdminEditOpen] = useState(false);
+    const [adminEditForm, setAdminEditForm] = useState<AdminEditForm | null>(null);
+    const [isAdminActionLoading, setIsAdminActionLoading] = useState(false);
+    const [adminActionError, setAdminActionError] = useState('');
 
     const images = useMemo(() => item?.img?.filter(Boolean) ?? [], [item]);
 
@@ -122,6 +157,14 @@ export default function ItemPage() {
 
                 if (token) {
                     try {
+                        const currentUser = await UserService.me(token);
+
+                        setIsAdmin(Boolean(currentUser.roles?.includes('ADMIN')));
+                    } catch {
+                        setIsAdmin(false);
+                    }
+
+                    try {
                         const existingReport = await ReportService.getMyReportForItem(
                             token,
                             itemData._id,
@@ -131,6 +174,8 @@ export default function ItemPage() {
                     } catch {
                         setReport(null);
                     }
+                } else {
+                    setIsAdmin(false);
                 }
 
                 setIsCompareAdded(isItemInCompare(itemData._id));
@@ -281,6 +326,115 @@ export default function ItemPage() {
         }
     }
 
+    function openAdminEditModal() {
+        if (!item) return;
+
+        setAdminEditForm(getInitialAdminEditForm(item));
+        setAdminActionError('');
+        setIsAdminEditOpen(true);
+    }
+
+    function closeAdminEditModal() {
+        if (isAdminActionLoading) return;
+
+        setIsAdminEditOpen(false);
+        setAdminActionError('');
+        setAdminEditForm(null);
+    }
+
+    function handleAdminEditChange(
+        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    ) {
+        const { name, value } = event.target;
+
+        setAdminEditForm((prev) => {
+            if (!prev) return prev;
+
+            return {
+                ...prev,
+                [name]: name === 'isNewState' ? value === 'true' : value,
+            };
+        });
+    }
+
+    async function handleAdminEditSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!item || !adminEditForm) return;
+
+        const token = getValidAuthToken();
+
+        if (!adminEditForm.location.trim()) {
+            setAdminActionError('Вкажіть місто');
+            return;
+        }
+
+        if (!token) {
+            router.push('/registration');
+            return;
+        }
+
+        const price = Number(adminEditForm.price);
+
+        if (!adminEditForm.name.trim()) {
+            setAdminActionError('Вкажіть назву оголошення');
+            return;
+        }
+
+        if (!Number.isFinite(price) || price <= 0) {
+            setAdminActionError('Ціна має бути більшою за 0');
+            return;
+        }
+
+        try {
+            setIsAdminActionLoading(true);
+            setAdminActionError('');
+
+            const updatedItem = await ItemService.updateItem(token, item._id, {
+                name: adminEditForm.name.trim(),
+                description: adminEditForm.description.trim(),
+                price,
+                location: adminEditForm.location.trim(),
+                isNewState: adminEditForm.isNewState,
+            });
+
+            setItem(updatedItem);
+            closeAdminEditModal();
+        } catch (e: any) {
+            setAdminActionError(e?.message || 'Не вдалося оновити оголошення');
+        } finally {
+            setIsAdminActionLoading(false);
+        }
+    }
+
+    async function handleAdminArchiveItem() {
+        if (!item) return;
+
+        const token = getValidAuthToken();
+
+        if (!token) {
+            router.push('/registration');
+            return;
+        }
+
+        const confirmed = window.confirm(`Архівувати оголошення "${item.name}"?`);
+
+        if (!confirmed) return;
+
+        try {
+            setIsAdminActionLoading(true);
+            setAdminActionError('');
+
+            await AdminService.archiveItem(token, item._id);
+
+            router.push('/home');
+        } catch (e: any) {
+            setAdminActionError(e?.message || 'Не вдалося архівувати оголошення');
+        } finally {
+            setIsAdminActionLoading(false);
+        }
+    }
+
     if (isLoading) {
         return (
             <Page>
@@ -417,6 +571,25 @@ export default function ItemPage() {
                             <BuyButton type="button" onClick={handleBuy}>
                                 Купити
                             </BuyButton>
+
+                            {isAdmin && (
+                                <AdminActions>
+                                    <AdminButton type="button" onClick={openAdminEditModal}>
+                                        Редагувати оголошення
+                                    </AdminButton>
+
+                                    <AdminDangerButton
+                                        type="button"
+                                        disabled={isAdminActionLoading}
+                                        onClick={handleAdminArchiveItem}
+                                    >
+                                        Архівувати оголошення
+                                    </AdminDangerButton>
+
+                                    {adminActionError && <ModalError>{adminActionError}</ModalError>}
+                                </AdminActions>
+                            )}
+
                         </InfoCard>
 
                         <SellerCard>
@@ -499,6 +672,88 @@ export default function ItemPage() {
                             </ReportFormActions>
                         </form>
                     </ModalCard>
+                </ModalBackdrop>
+            )}
+            {isAdminEditOpen && adminEditForm && (
+                <ModalBackdrop>
+                    <AdminModalCard>
+                        <ModalHeader>
+                            <div>
+                                <h2>Редагувати оголошення</h2>
+                                <p>{item.name}</p>
+                            </div>
+
+                            <SecondaryButton type="button" onClick={closeAdminEditModal}>
+                                Закрити
+                            </SecondaryButton>
+                        </ModalHeader>
+
+                        <form onSubmit={handleAdminEditSubmit}>
+                            <AdminEditGrid>
+                                <AdminField>
+                                    <span>Назва</span>
+                                    <AdminInput
+                                        name="name"
+                                        value={adminEditForm.name}
+                                        onChange={handleAdminEditChange}
+                                    />
+                                </AdminField>
+
+                                <AdminField>
+                                    <span>Ціна, грн</span>
+                                    <AdminInput
+                                        name="price"
+                                        type="number"
+                                        min="1"
+                                        value={adminEditForm.price}
+                                        onChange={handleAdminEditChange}
+                                    />
+                                </AdminField>
+
+                                <AdminField>
+                                    <span>Місто</span>
+                                    <AdminInput
+                                        name="location"
+                                        value={adminEditForm.location}
+                                        onChange={handleAdminEditChange}
+                                    />
+                                </AdminField>
+
+                                <AdminField>
+                                    <span>Стан</span>
+                                    <AdminSelect
+                                        name="isNewState"
+                                        value={String(adminEditForm.isNewState)}
+                                        onChange={handleAdminEditChange}
+                                    >
+                                        <option value="false">Б/в</option>
+                                        <option value="true">Новий</option>
+                                    </AdminSelect>
+                                </AdminField>
+                            </AdminEditGrid>
+
+                            <AdminField>
+                                <span>Опис</span>
+                                <AdminTextarea
+                                    name="description"
+                                    value={adminEditForm.description}
+                                    onChange={handleAdminEditChange}
+                                />
+                            </AdminField>
+
+                            {adminActionError && <ModalError>{adminActionError}</ModalError>}
+
+                            <AdminModalActions>
+                                <SecondaryButton type="button" onClick={closeAdminEditModal}>
+                                    Скасувати
+                                </SecondaryButton>
+
+                                <ReportButton type="submit" disabled={isAdminActionLoading}>
+                                    {isAdminActionLoading ? 'Збереження...' : 'Зберегти зміни'}
+                                </ReportButton>
+                            </AdminModalActions>
+                        </form>
+                    </AdminModalCard>
                 </ModalBackdrop>
             )}
         </Page>

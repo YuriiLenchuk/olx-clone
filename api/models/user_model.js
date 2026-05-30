@@ -61,6 +61,22 @@ const UserSchema = new mongoose.Schema(
             },
         ],
 
+        isBlocked: {
+            type: Boolean,
+            default: false,
+        },
+
+        blockedAt: {
+            type: Date,
+            default: null,
+        },
+
+        blockedReason: {
+            type: String,
+            trim: true,
+            default: '',
+        },
+
         averageRating: {
             type: Number,
             default: 0,

@@ -315,7 +315,7 @@ export default function AddPage() {
                                     </option>
 
                                     {categories.map((category) => (
-                                        <option key={category.name} value={category.name}>
+                                        <option key={category.path} value={category.path}>
                                             {category.name}
                                         </option>
                                     ))}
@@ -337,15 +337,11 @@ export default function AddPage() {
                                             : 'Підкатегорій немає'}
                                     </option>
 
-                                    {subcategories.map((subcategory) => {
-                                        const name = getSubcategoryName(subcategory);
-
-                                        return (
-                                            <option key={name} value={name}>
-                                                {name}
-                                            </option>
-                                        );
-                                    })}
+                                    {subcategories.map((subcategory) => (
+                                        <option key={subcategory.path} value={subcategory.path}>
+                                            {subcategory.name}
+                                        </option>
+                                    ))}
                                 </Select>
                             </Field>
 

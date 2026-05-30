@@ -1,6 +1,8 @@
 import axios from "axios";
 import { removeAuthToken } from "@/Utils/authToken";
 
+let isHandlingUnauthorized = false;
+
 const axiosInstance = axios.create({
     baseURL: 'http://localhost:3005/',
     headers: {
@@ -14,12 +16,17 @@ axiosInstance.interceptors.response.use(
         const status = error?.response?.status;
         const url = error?.config?.url || '';
 
-        if (
-            status === 401 &&
-            !url.includes('/auth/login') &&
-            !url.includes('/auth/registration')
-        ) {
+        const isAuthAction =
+            url.includes('/auth/login') ||
+            url.includes('/auth/registration');
+
+        if (status === 401 && !isAuthAction && !isHandlingUnauthorized) {
+            isHandlingUnauthorized = true;
             removeAuthToken();
+
+            setTimeout(() => {
+                isHandlingUnauthorized = false;
+            }, 1000);
         }
 
         return Promise.reject(error);

@@ -44,16 +44,20 @@ const escapeRegExp = value => {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
+const publicItemFilter = () => ({
+    isArchived: { $ne: true },
+    archivedAt: null,
+    archivedByCheckout: null,
+});
+
 const getAllItems = async (req, res) => {
     try {
         const { page, limit, search, sort } = req.query;
         const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
         const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
         const skip = (normalizedPage - 1) * normalizedLimit;
-        console.log(search)
-        const filter = {
-            isArchived: { $ne: true },
-        };
+
+        const filter = publicItemFilter();
 
         const normalizedSearch = String(search || '').trim();
 
@@ -121,7 +125,7 @@ const getItemByCategory = async (req, res) => {
         }
 
         const filter = {
-            isArchived: { $ne: true },
+            ...publicItemFilter(),
             $or: [{ 'categoryData.category': name }, { 'categoryData.subcategory': name }],
         };
 
@@ -173,7 +177,7 @@ const getItemById = async (req, res) => {
 
         const items = await Item.findOne({
             _id: req.params.id,
-            isArchived: { $ne: true },
+            ...publicItemFilter(),
         })
             .select('-__v')
             .populate({
@@ -395,7 +399,7 @@ const getMyItems = async (req, res) => {
 
         const filter = {
             owner: req.user.id,
-            isArchived: { $ne: true },
+            ...publicItemFilter(),
         };
 
         const items = await Item.find(filter)

@@ -759,3 +759,155 @@ export const PageAlert = styled.div`
         }
     }
 `;
+
+export const AdminActions = styled.div`
+    margin-top: 14px;
+    padding-top: 14px;
+
+    display: grid;
+    gap: 10px;
+
+    border-top: 1px solid var(--border, #e8e1d6);
+`;
+
+export const AdminButton = styled.button`
+    width: 100%;
+    min-height: 48px;
+    padding: 0 18px;
+
+    color: var(--primary-dark, #2d4f3f);
+    background: #eef7f1;
+    border: 1px solid rgba(63, 111, 88, 0.28);
+    border-radius: 16px;
+
+    font-size: 14px;
+    font-weight: 950;
+
+    cursor: pointer;
+    transition: 0.16s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: rgba(63, 111, 88, 0.45);
+        box-shadow: 0 14px 30px rgba(35, 45, 39, 0.08);
+    }
+`;
+
+export const AdminDangerButton = styled(AdminButton)`
+    color: #9b2f2f;
+    background: #fff5f5;
+    border-color: rgba(212, 91, 91, 0.28);
+
+    &:hover:not(:disabled) {
+        border-color: rgba(212, 91, 91, 0.48);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+    }
+`;
+
+export const AdminModalCard = styled(ModalCard)`
+    width: min(680px, 100%);
+`;
+
+export const AdminEditGrid = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+
+    @media (max-width: 620px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+export const AdminField = styled.label`
+    display: grid;
+    gap: 7px;
+
+    span {
+        color: var(--text, #1f2a24);
+        font-size: 13px;
+        font-weight: 900;
+    }
+`;
+
+export const AdminInput = styled.input`
+    width: 100%;
+    height: 46px;
+    padding: 0 13px;
+
+    color: var(--text, #1f2a24);
+    background: #f8f5ef;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 14px;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    outline: none;
+
+    &:focus {
+        border-color: var(--primary, #3f6f58);
+        box-shadow: 0 0 0 3px rgba(63, 111, 88, 0.12);
+    }
+`;
+
+export const AdminSelect = styled.select`
+    width: 100%;
+    height: 46px;
+    padding: 0 13px;
+
+    color: var(--text, #1f2a24);
+    background: #f8f5ef;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 14px;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    outline: none;
+
+    &:focus {
+        border-color: var(--primary, #3f6f58);
+        box-shadow: 0 0 0 3px rgba(63, 111, 88, 0.12);
+    }
+`;
+
+export const AdminTextarea = styled.textarea`
+    width: 100%;
+    min-height: 140px;
+    margin-top: 12px;
+    padding: 12px 14px;
+
+    resize: vertical;
+
+    color: var(--text, #1f2a24);
+    background: #f8f5ef;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 14px;
+
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.55;
+
+    outline: none;
+
+    &:focus {
+        border-color: var(--primary, #3f6f58);
+        box-shadow: 0 0 0 3px rgba(63, 111, 88, 0.12);
+    }
+`;
+
+export const AdminModalActions = styled.div`
+    margin-top: 16px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+
+    @media (max-width: 520px) {
+        grid-template-columns: 1fr;
+    }
+`;
