@@ -1,5 +1,5 @@
 import axios from "axios";
-import { removeAuthToken } from "@/Utils/authToken";
+import { getAuthToken, removeAuthToken } from "@/Utils/authToken";
 
 let isHandlingUnauthorized = false;
 
@@ -9,6 +9,18 @@ const axiosInstance = axios.create({
         "Content-Type": "application/json",
     },
 });
+
+function getRequestToken(error) {
+    const headers = error?.config?.headers || {};
+    const authHeader =
+        typeof headers.get === 'function'
+            ? headers.get('Authorization')
+            : headers.Authorization || headers.authorization || '';
+
+    return typeof authHeader === 'string'
+        ? authHeader.replace(/^Bearer\s+/i, '')
+        : '';
+}
 
 axiosInstance.interceptors.response.use(
     (response) => response,
@@ -20,7 +32,17 @@ axiosInstance.interceptors.response.use(
             url.includes('/auth/login') ||
             url.includes('/auth/registration');
 
-        if (status === 401 && !isAuthAction && !isHandlingUnauthorized) {
+        const requestToken = getRequestToken(error);
+        const currentToken = getAuthToken();
+
+        if (
+            status === 401 &&
+            !isAuthAction &&
+            currentToken &&
+            requestToken &&
+            requestToken === currentToken &&
+            !isHandlingUnauthorized
+        ) {
             isHandlingUnauthorized = true;
             removeAuthToken();
 

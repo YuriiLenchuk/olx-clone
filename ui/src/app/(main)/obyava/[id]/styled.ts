@@ -911,3 +911,26 @@ export const AdminModalActions = styled.div`
         grid-template-columns: 1fr;
     }
 `;
+
+export const SellerReviewsButton = styled.button`
+    grid-column: 1 / -1;
+    height: 44px;
+    margin-top: 4px;
+
+    color: var(--primary-dark, #2d4f3f);
+    background: #f8f5ef;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 16px;
+
+    font-size: 14px;
+    font-weight: 950;
+
+    cursor: pointer;
+    transition: 0.16s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: rgba(63, 111, 88, 0.32);
+        box-shadow: 0 14px 30px rgba(35, 45, 39, 0.08);
+    }
+`;

@@ -28,8 +28,9 @@ interface Item {
     description: string;
     price: number;
     isNewState: boolean;
-    owner?: {
-        avatar: string;
+    owner?: string | {
+        _id?: string;
+        avatar?: string;
         username?: string;
         firstName?: string;
         lastName?: string;

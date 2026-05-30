@@ -63,6 +63,7 @@ import {
     AdminModalCard,
     AdminSelect,
     AdminTextarea,
+    SellerReviewsButton,
 } from './styled';
 import {
     addCompareItem,
@@ -223,6 +224,32 @@ export default function ItemPage() {
         favoriteIds.push(item._id);
         Cookies.set('checked', JSON.stringify(favoriteIds));
         setIsFavorite(true);
+    }
+
+    function getOwnerId(owner: Item['owner']) {
+        if (!owner) return '';
+        if (typeof owner === 'string') return owner;
+
+        return owner._id || '';
+    }
+
+    function getSellerName(owner: Item['owner']) {
+        if (!owner || typeof owner === 'string') return 'Користувач';
+
+        const fullName = `${owner.firstName || ''} ${owner.lastName || ''}`.trim();
+
+        return fullName || owner.username || 'Користувач';
+    }
+
+    function handleViewSellerReviews() {
+        console.log(item)
+        if (!item) return;
+
+        const ownerId = getOwnerId(item.owner);
+
+        if (!ownerId) return;
+
+        router.push(`/reviews/${ownerId}`);
     }
 
     function toggleCompare() {
@@ -459,6 +486,9 @@ export default function ItemPage() {
         );
     }
 
+    const ownerId = getOwnerId(item.owner);
+    const sellerName = getSellerName(item.owner);
+
     return (
         <Page>
             <PageContainer>
@@ -594,14 +624,18 @@ export default function ItemPage() {
 
                         <SellerCard>
                             <SellerAvatar>
-                                {(item.owner?.avatar || item.owner?.username || 'U').charAt(0).toUpperCase()}
+                                {sellerName.charAt(0).toUpperCase()}
                             </SellerAvatar>
 
                             <SellerInfo>
                                 <span>Продавець</span>
-                                <strong>{(item.owner?.firstName + ' ' + item.owner?.lastName) || item.owner?.username || 'Користувач'}</strong>
+                                <strong>{sellerName}</strong>
                                 <p>На Local Market</p>
                             </SellerInfo>
+
+                            <SellerReviewsButton type="button" onClick={handleViewSellerReviews}>
+                                Переглянути відгуки продавця
+                            </SellerReviewsButton>
 
                             <ContactButton type="button" onClick={handleContactSeller}>
                                 Написати продавцю

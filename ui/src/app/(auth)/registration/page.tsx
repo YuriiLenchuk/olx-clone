@@ -81,7 +81,8 @@ export default function Auth() {
                 });
 
                 setAuthToken(response.token);
-                router.push('/auth/me');
+                router.replace('/auth/me');
+                router.refresh();
                 return;
             }
 

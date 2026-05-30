@@ -382,7 +382,6 @@ export default function ProfilePage() {
                 ]);
 
                 if (reviewsResult.status === 'fulfilled') {
-                    console.log(reviewsResult)
                     setMyReviews(reviewsResult.value.reviews || []);
                 } else {
                     setMyReviews([]);
@@ -453,7 +452,9 @@ export default function ProfilePage() {
 
     function logout() {
         removeAuthToken();
-        router.push('/home');
+        setUser(null);
+        router.replace('/home');
+        router.refresh();
     }
 
     async function handleProfileUpdate(event: FormEvent<HTMLFormElement>) {
@@ -590,6 +591,40 @@ export default function ProfilePage() {
             closeReviewEditModal();
         } catch (e: any) {
             setReviewActionError(e?.message || 'Не вдалося оновити відгук');
+        } finally {
+            setIsReviewActionLoading(false);
+        }
+    }
+
+    async function handleReviewDelete(review: Review) {
+        const confirmed = window.confirm(
+            `Видалити відгук для "${getReviewTargetName(review)}"?`,
+        );
+
+        if (!confirmed) return;
+
+        const actualToken = getValidAuthToken();
+
+        if (!actualToken) {
+            router.replace('/registration');
+            return;
+        }
+
+        try {
+            setIsReviewActionLoading(true);
+            setReviewActionError('');
+            setError('');
+            setMessage('');
+
+            await ReviewService.deleteReview(actualToken, review._id);
+
+            setMyReviews((prev) =>
+                prev.filter((currentReview) => currentReview._id !== review._id),
+            );
+
+            setMessage('Відгук видалено');
+        } catch (e: any) {
+            setError(e?.message || 'Не вдалося видалити відгук');
         } finally {
             setIsReviewActionLoading(false);
         }
@@ -1079,19 +1114,29 @@ export default function ProfilePage() {
                                                 <div>
                                                     <strong>{getReviewTargetName(review)}</strong>
                                                     <span>
-                                    Оцінка: {review.rating}/5
+                                                        Оцінка: {review.rating}/5
                                                         {review.item?.name ? ` · ${review.item.name}` : ''}
-                                </span>
+                                                    </span>
                                                     {review.comment && <span>{review.comment}</span>}
                                                 </div>
 
                                                 <Actions>
-                                                    <SmallButton
-                                                        type="button"
-                                                        onClick={() => openReviewEditModal(review)}
-                                                    >
-                                                        Редагувати
-                                                    </SmallButton>
+                                                    <Actions>
+                                                        <SmallButton
+                                                            type="button"
+                                                            onClick={() => openReviewEditModal(review)}
+                                                        >
+                                                            Редагувати
+                                                        </SmallButton>
+
+                                                        <DangerSmallButton
+                                                            type="button"
+                                                            disabled={isReviewActionLoading}
+                                                            onClick={() => handleReviewDelete(review)}
+                                                        >
+                                                            Видалити
+                                                        </DangerSmallButton>
+                                                    </Actions>
                                                 </Actions>
                                             </ItemCard>
                                         ))}

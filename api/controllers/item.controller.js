@@ -182,7 +182,7 @@ const getItemById = async (req, res) => {
             .select('-__v')
             .populate({
                 path: 'owner',
-                select: '-_id -password -roles -__v',
+                select: '_id username firstName lastName avatar email phone city',
             })
             .skip(skip)
             .limit(limit);

@@ -49,6 +49,9 @@ export default function Header() {
 
     const loadUser = useCallback(async () => {
         const token = getValidAuthToken();
+        const requestId = requestIdRef.current + 1;
+
+        requestIdRef.current = requestId;
 
         if (!token) {
             setUser(null);
@@ -56,19 +59,12 @@ export default function Header() {
             return;
         }
 
-        if (isLoadingUserRef.current) return;
-
-        const requestId = requestIdRef.current + 1;
-
-        requestIdRef.current = requestId;
-        isLoadingUserRef.current = true;
-
         try {
             setIsAuthChecked(false);
 
             const userData = await UserService.me(token);
 
-            if (requestIdRef.current === requestId) {
+            if (requestIdRef.current === requestId && getAuthToken() === token) {
                 setUser(userData);
             }
         } catch {
@@ -83,8 +79,6 @@ export default function Header() {
             if (requestIdRef.current === requestId) {
                 setIsAuthChecked(true);
             }
-
-            isLoadingUserRef.current = false;
         }
     }, []);
 
