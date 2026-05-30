@@ -12,8 +12,7 @@ import {
     WrapperFormContainer,
     WrapperInput
 } from './styled';
-import Cookies from "js-cookie";
-import {getAuthToken, setAuthToken} from "@/Utils/authToken";
+import { getValidAuthToken, removeAuthToken, setAuthToken } from "@/Utils/authToken";
 
 type Inputs = {
     user: string
@@ -25,13 +24,35 @@ interface User {
 }
 
 export default function Auth() {
+    const router = useRouter();
     useEffect(() => {
-        if (getAuthToken()) return router.push("/auth/me");
-    }, []);
+        let isMounted = true;
+
+        async function checkExistingSession() {
+            const token = getValidAuthToken();
+
+            if (!token) return;
+
+            try {
+                await UserService.me(token);
+
+                if (isMounted) {
+                    router.replace('/auth/me');
+                }
+            } catch {
+                removeAuthToken();
+            }
+        }
+
+        checkExistingSession();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [router]);
 
     const [variant, setVariant] = useState<string>('isLogin');
     const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
     const onClick = (data:User) => {
         switch (variant) {
             case 'isRegister': UserService.registration({username: data.user, password: data.password}).then(r => {

@@ -1,7 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import Cookies from 'js-cookie';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import UserService, { AuthUser } from '@/services/UserService';
@@ -39,6 +38,15 @@ import {
     SkeletonInfoItem,
     TextInput,
     TitleBlock,
+    DangerSmallButton,
+    ModalActions,
+    ModalBackdrop,
+    ModalCard,
+    ModalError,
+    ModalGrid,
+    ModalHeader,
+    ModalSelect,
+    TextArea,
 } from './styled';
 import { getValidAuthToken, removeAuthToken } from '@/Utils/authToken';
 
@@ -62,6 +70,24 @@ type PasswordForm = {
     newPassword: string;
     repeatPassword: string;
 };
+
+type ItemEditForm = {
+    name: string;
+    description: string;
+    price: string;
+    location: string;
+    isNewState: boolean;
+};
+
+function getItemEditForm(item: Item): ItemEditForm {
+    return {
+        name: item.name || '',
+        description: item.description || '',
+        price: String(item.price || ''),
+        location: item.location || '',
+        isNewState: Boolean(item.isNewState),
+    };
+}
 
 const tabs: Array<{ id: TabId; label: string }> = [
     { id: 'overview', label: 'Огляд' },
@@ -280,6 +306,12 @@ export default function ProfilePage() {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
+    const [editingItem, setEditingItem] = useState<Item | null>(null);
+    const [itemEditForm, setItemEditForm] = useState<ItemEditForm | null>(null);
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [isItemActionLoading, setIsItemActionLoading] = useState(false);
+    const [itemActionError, setItemActionError] = useState('');
+
     const token = useMemo(() => getToken(), []);
     const currentUserId = useMemo(() => getCurrentUserId(token), [token]);
 
@@ -374,22 +406,10 @@ export default function ProfilePage() {
                 } else {
                     setSalesPayments([]);
                 }
-            } catch (e: any) {
-                const message = getErrorMessage(e, 'Не вдалося завантажити профіль');
-
-                if (
-                    message.toLowerCase().includes('авториз') ||
-                    message.toLowerCase().includes('token') ||
-                    message.toLowerCase().includes('jwt')
-                ) {
-                    removeAuthToken();
-                    router.replace('/registration');
-                    return;
-                }
-
-                if (isMounted) {
-                    setError(message);
-                }
+            } catch {
+                removeAuthToken();
+                router.replace('/registration');
+                return;
             } finally {
                 if (isMounted) {
                     setIsLoading(false);
@@ -521,6 +541,119 @@ export default function ProfilePage() {
             : chat.buyer;
     }
 
+    function openItemEditModal(item: Item) {
+        setEditingItem(item);
+        setItemEditForm(getItemEditForm(item));
+        setItemActionError('');
+        setIsItemModalOpen(true);
+    }
+
+    function closeItemEditModal() {
+        if (isItemActionLoading) return;
+
+        setEditingItem(null);
+        setItemEditForm(null);
+        setItemActionError('');
+        setIsItemModalOpen(false);
+    }
+
+    function handleItemEditChange(
+        event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    ) {
+        const { name, value } = event.target;
+
+        setItemEditForm((prev) => {
+            if (!prev) return prev;
+
+            return {
+                ...prev,
+                [name]: name === 'isNewState' ? value === 'true' : value,
+            };
+        });
+    }
+
+    async function handleItemEditSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!editingItem || !itemEditForm) return;
+
+        const actualToken = getValidAuthToken();
+
+        if (!actualToken) {
+            router.replace('/registration');
+            return;
+        }
+
+        const price = Number(itemEditForm.price);
+
+        if (!itemEditForm.name.trim()) {
+            setItemActionError('Вкажіть назву оголошення');
+            return;
+        }
+
+        if (!Number.isFinite(price) || price <= 0) {
+            setItemActionError('Ціна має бути більшою за 0');
+            return;
+        }
+
+        if (!itemEditForm.location.trim()) {
+            setItemActionError('Вкажіть місто');
+            return;
+        }
+
+        try {
+            setIsItemActionLoading(true);
+            setItemActionError('');
+
+            const updatedItem = await ItemService.updateItem(actualToken, editingItem._id, {
+                name: itemEditForm.name.trim(),
+                description: itemEditForm.description.trim(),
+                price,
+                location: itemEditForm.location.trim(),
+                isNewState: itemEditForm.isNewState,
+            });
+
+            setItems((prev) =>
+                prev.map((item) => (item._id === updatedItem._id ? updatedItem : item)),
+            );
+
+            setMessage('Оголошення оновлено');
+            closeItemEditModal();
+        } catch (e: any) {
+            setItemActionError(e?.message || 'Не вдалося оновити оголошення');
+        } finally {
+            setIsItemActionLoading(false);
+        }
+    }
+
+    async function handleItemDelete(item: Item) {
+        const actualToken = getValidAuthToken();
+
+        if (!actualToken) {
+            router.replace('/registration');
+            return;
+        }
+
+        const confirmed = window.confirm(`Видалити оголошення "${item.name}"?`);
+
+        if (!confirmed) return;
+
+        try {
+            setIsItemActionLoading(true);
+            setError('');
+            setMessage('');
+
+            await ItemService.deleteItem(actualToken, item._id);
+
+            setItems((prev) => prev.filter((currentItem) => currentItem._id !== item._id));
+            setMessage('Оголошення видалено');
+        } catch (e: any) {
+            setError(e?.message || 'Не вдалося видалити оголошення');
+        } finally {
+            setIsItemActionLoading(false);
+        }
+    }
+
     if (isLoading) {
         return <ProfileSkeleton />;
     }
@@ -645,6 +778,21 @@ export default function ProfilePage() {
                                                     >
                                                         Переглянути
                                                     </SmallButton>
+
+                                                    <SmallButton
+                                                        type="button"
+                                                        onClick={() => openItemEditModal(item)}
+                                                    >
+                                                        Редагувати
+                                                    </SmallButton>
+
+                                                    <DangerSmallButton
+                                                        type="button"
+                                                        disabled={isItemActionLoading}
+                                                        onClick={() => handleItemDelete(item)}
+                                                    >
+                                                        Видалити
+                                                    </DangerSmallButton>
                                                 </Actions>
                                             </ItemCard>
                                         ))}
@@ -981,6 +1129,88 @@ export default function ProfilePage() {
                     )}
                 </ContentFade>
             </PageContainer>
+            {isItemModalOpen && editingItem && itemEditForm && (
+                <ModalBackdrop>
+                    <ModalCard>
+                        <ModalHeader>
+                            <div>
+                                <h2>Редагувати оголошення</h2>
+                                <p>{editingItem.name}</p>
+                            </div>
+
+                            <SmallButton type="button" onClick={closeItemEditModal}>
+                                Закрити
+                            </SmallButton>
+                        </ModalHeader>
+
+                        <form onSubmit={handleItemEditSubmit}>
+                            <ModalGrid>
+                                <Field>
+                                    <label>Назва</label>
+                                    <TextInput
+                                        name="name"
+                                        value={itemEditForm.name}
+                                        onChange={handleItemEditChange}
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <label>Ціна, грн</label>
+                                    <TextInput
+                                        name="price"
+                                        type="number"
+                                        min="1"
+                                        value={itemEditForm.price}
+                                        onChange={handleItemEditChange}
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <label>Місто</label>
+                                    <TextInput
+                                        name="location"
+                                        value={itemEditForm.location}
+                                        onChange={handleItemEditChange}
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <label>Стан</label>
+                                    <ModalSelect
+                                        name="isNewState"
+                                        value={String(itemEditForm.isNewState)}
+                                        onChange={handleItemEditChange}
+                                    >
+                                        <option value="false">Б/в</option>
+                                        <option value="true">Новий</option>
+                                    </ModalSelect>
+                                </Field>
+                            </ModalGrid>
+
+                            <Field>
+                                <label>Опис</label>
+                                <TextArea
+                                    name="description"
+                                    value={itemEditForm.description}
+                                    onChange={handleItemEditChange}
+                                />
+                            </Field>
+
+                            {itemActionError && <ModalError>{itemActionError}</ModalError>}
+
+                            <ModalActions>
+                                <SmallButton type="button" onClick={closeItemEditModal}>
+                                    Скасувати
+                                </SmallButton>
+
+                                <PrimaryButton type="submit" disabled={isItemActionLoading}>
+                                    {isItemActionLoading ? 'Збереження...' : 'Зберегти'}
+                                </PrimaryButton>
+                            </ModalActions>
+                        </form>
+                    </ModalCard>
+                </ModalBackdrop>
+            )}
         </Page>
     );
 }

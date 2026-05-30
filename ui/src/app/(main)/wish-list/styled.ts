@@ -202,21 +202,6 @@ export const EmptyIcon = styled.div`
   line-height: 1;
   font-weight: 900;
 `;
-
-export const LoadingCard = styled.div`
-  padding: 40px;
-
-  color: var(--muted, #6f7a73);
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid var(--border, #e8e1d6);
-  border-radius: 24px;
-  box-shadow: 0 18px 42px rgba(35, 45, 39, 0.08);
-
-  font-size: 16px;
-  font-weight: 900;
-  text-align: center;
-`;
-
 export const ErrorCard = styled.div`
   padding: 34px;
 

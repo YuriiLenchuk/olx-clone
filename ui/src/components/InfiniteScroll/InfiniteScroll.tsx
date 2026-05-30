@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Cookies from "js-cookie";
+import FavoriteService from '@/services/FavoriteService';
+import { getValidAuthToken } from '@/Utils/authToken';
 
 import { CategoryService, Item } from "@/services/CategoryService";
 import ItemCard from "@/components/ItemCard/page";
@@ -15,19 +16,6 @@ type Props = {
     search?: string;
 };
 
-function getCheckedIds(): string[] {
-    try {
-        const cookie = Cookies.get('checked');
-
-        if (!cookie) return [];
-
-        const parsed = JSON.parse(cookie);
-
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-}
 
 export default function InfiniteScroll({
                                            initialItems,
@@ -39,16 +27,32 @@ export default function InfiniteScroll({
     const [items, setItems] = useState<Item[]>(initialItems);
     const [page, setPage] = useState(1);
     const [currentTotalPages, setCurrentTotalPages] = useState(totalPages);
+    const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
     const loaderRef = useRef<HTMLDivElement | null>(null);
     const isFetching = useRef(false);
     const prevSelected = useRef(selected);
 
+    useEffect(() => {
+        async function loadFavoriteIds() {
+            const token = getValidAuthToken();
+
+            if (!token) {
+                setFavoriteIds([]);
+                return;
+            }
+
+            const ids = await FavoriteService.getFavoriteIds(token);
+
+            setFavoriteIds(ids);
+        }
+
+        loadFavoriteIds();
+    }, []);
+
     const requestKey = useMemo(() => {
         return `${category || ''}:${search || ''}`;
     }, [category, search]);
-
-    const checkedIds = getCheckedIds();
 
     const fetchItems = async (nextPage: number, sort: string, reset = false) => {
         try {
@@ -117,7 +121,14 @@ export default function InfiniteScroll({
                 <ItemCard
                     key={item._id}
                     item={item}
-                    checked={checkedIds.includes(item._id)}
+                    checked={favoriteIds.includes(item._id)}
+                    onFavoriteChange={(itemId, isSelected) => {
+                        setFavoriteIds((prev) =>
+                            isSelected
+                                ? Array.from(new Set([...prev, itemId]))
+                                : prev.filter((id) => id !== itemId),
+                        );
+                    }}
                 />
             ))}
 

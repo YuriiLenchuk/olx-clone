@@ -19,6 +19,7 @@ const checkoutRouter = require('./routes/checkout');
 const assistantRouter = require('./routes/assistant');
 const reportRouter = require('./routes/report');
 const adminRouter = require('./routes/admin');
+const favoriteRouter = require('./routes/favorite');
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use('/checkout', checkoutRouter);
 app.use('/assistant', assistantRouter);
 app.use('/reports', reportRouter);
 app.use('/admin', adminRouter);
+app.use('/favorites', favoriteRouter);
 
 app.use((req, res, next) => {
     next(createError(404));

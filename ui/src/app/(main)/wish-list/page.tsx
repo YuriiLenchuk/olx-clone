@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
+import FavoriteService from '@/services/FavoriteService';
+import { getValidAuthToken } from '@/Utils/authToken';
 import Link from 'next/link';
 
 import ItemCard from '@/components/ItemCard/page';
-import { CategoryService, Item } from '@/services/CategoryService';
+import { Item } from '@/services/CategoryService';
 
 import {
     ActionButton,
@@ -14,7 +16,6 @@ import {
     ErrorCard,
     HeaderActions,
     ItemsList,
-    LoadingCard,
     Page,
     PageContainer,
     PageDescription,
@@ -69,27 +70,11 @@ function WishListSkeleton() {
         </Page>
     );
 }
-
-function getWishlistIds(): string[] {
-    const cookie = getAuthToken();
-
-    if (!cookie) return [];
-
-    try {
-        const parsed = JSON.parse(cookie);
-
-        if (!Array.isArray(parsed)) return [];
-
-        return parsed.filter(Boolean);
-    } catch {
-        return [];
-    }
-}
-
 export default function WishList() {
     const [items, setItems] = useState<Item[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const router = useRouter();
 
     const totalItems = useMemo(() => items.length, [items]);
 
@@ -98,26 +83,16 @@ export default function WishList() {
             setIsLoading(true);
             setError('');
 
-            const ids = getWishlistIds();
+            const token = getValidAuthToken();
 
-            if (!ids.length) {
-                setItems([]);
+            if (!token) {
+                router.push('/registration');
                 return;
             }
 
-            const loadedItems = await Promise.allSettled(
-                ids.map((id) => CategoryService.getItemById(id)),
-            );
+            const response = await FavoriteService.getFavorites(token);
 
-            const successItems = loadedItems
-                .filter(
-                    (result): result is PromiseFulfilledResult<Item> =>
-                        result.status === 'fulfilled',
-                )
-                .map((result) => result.value)
-                .filter(Boolean);
-
-            setItems(successItems);
+            setItems(response.items || []);
         } catch (e) {
             setError('Не вдалося завантажити збережені оголошення');
         } finally {
@@ -125,8 +100,15 @@ export default function WishList() {
         }
     }
 
-    function clearWishlist() {
-        Cookies.set('checked', JSON.stringify([]));
+    async function clearWishlist() {
+        const token = getValidAuthToken();
+
+        if (!token) {
+            router.push('/registration');
+            return;
+        }
+
+        await FavoriteService.clearFavorites(token);
         setItems([]);
     }
 
@@ -135,14 +117,7 @@ export default function WishList() {
     }, []);
 
     if (isLoading) {
-        return (
-            <Page>
-                <PageContainer>
-                    <PageHeader>...</PageHeader>
-                    <LoadingCard>Завантаження...</LoadingCard>
-                </PageContainer>
-            </Page>
-        );
+        return <WishListSkeleton />;
     }
 
     if (error) {
@@ -196,7 +171,16 @@ export default function WishList() {
                 {items.length > 0 ? (
                     <ItemsList>
                         {items.map((item) => (
-                            <ItemCard key={item._id} item={item} checked />
+                            <ItemCard
+                                key={item._id}
+                                item={item}
+                                checked
+                                onFavoriteChange={(itemId, isSelected) => {
+                                    if (!isSelected) {
+                                        setItems((prev) => prev.filter((item) => item._id !== itemId));
+                                    }
+                                }}
+                            />
                         ))}
                     </ItemsList>
                 ) : (

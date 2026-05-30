@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import Cookies from 'js-cookie';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+import FavoriteService from '@/services/FavoriteService';
+import { getValidAuthToken } from '@/Utils/authToken';
 
 import { Item } from '@/services/CategoryService';
 import date from '@/Utils/DateStr';
@@ -20,43 +23,46 @@ import {
     StyledProductWrapper,
 } from './styled';
 
-export default function ItemCard({
-                                     item,
-                                     checked,
-                                 }: {
-    item: Item;
-    checked?: boolean;
-}) {
-    const [selected, setSelected] = useState<boolean | undefined>(checked);
+interface ItemCardProps {
+    item: Item,
+    checked?: boolean,
+    onFavoriteChange?: (itemId: string, selected: boolean) => void,
+}
 
-    function setCookies() {
-        const checkedCookie = Cookies.get('checked');
-        const checkedArray = checkedCookie ? JSON.parse(checkedCookie) : [];
+export default function ItemCard({item, checked, onFavoriteChange,}: ItemCardProps) {
+    const router = useRouter();
+    const [selected, setSelected] = useState(Boolean(checked));
+    const [isSaving, setIsSaving] = useState(false);
 
-        if (!checkedArray.includes(item._id.toString())) {
-            checkedArray.push(item._id.toString());
+    useEffect(() => {
+        setSelected(Boolean(checked));
+    }, [checked]);
+
+    async function onClick(): Promise<void> {
+        if (isSaving) return;
+
+        const token = getValidAuthToken();
+
+        if (!token) {
+            router.push('/registration');
+            return;
         }
 
-        return JSON.stringify(checkedArray);
-    }
+        try {
+            setIsSaving(true);
 
-    function removeFromCookieArray(key: string, id: string) {
-        const cookie = Cookies.get(key);
-
-        if (!cookie) return;
-
-        Cookies.set(
-            key,
-            JSON.stringify(JSON.parse(cookie).filter((item: string) => item !== id))
-        );
-    }
-
-    function onClick(): void {
-        selected
-            ? removeFromCookieArray('checked', item._id)
-            : Cookies.set('checked', setCookies());
-
-        setSelected((prevState) => !prevState);
+            if (selected) {
+                await FavoriteService.removeFavorite(token, item._id);
+                setSelected(false);
+                onFavoriteChange?.(item._id, false);
+            } else {
+                await FavoriteService.addFavorite(token, item._id);
+                setSelected(true);
+                onFavoriteChange?.(item._id, true);
+            }
+        } finally {
+            setIsSaving(false);
+        }
     }
 
     return (
@@ -83,7 +89,12 @@ export default function ItemCard({
                 </StyledProductTitle>
             </StyledProductLink>
 
-            <StyledProductLike type="button" $selected={Boolean(selected)} onClick={onClick}>
+            <StyledProductLike
+                type="button"
+                $selected={selected}
+                disabled={isSaving}
+                onClick={onClick}
+            >
                 <span>{selected ? 'В обраному' : 'В обране'}</span>
                 <Like width={20} height={20} color="#3f6f58" checked={selected} />
             </StyledProductLike>

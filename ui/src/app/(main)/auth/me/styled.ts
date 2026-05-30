@@ -479,3 +479,116 @@ export const SkeletonInfoItem = styled.div`
     display: grid;
     gap: 10px;
 `;
+
+export const DangerSmallButton = styled(SmallButton)`
+    color: #ffffff;
+    background: var(--danger, #d45b5b);
+    border-color: rgba(212, 91, 91, 0.35);
+
+    &:hover:not(:disabled) {
+        background: #bd4242;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+    }
+`;
+
+export const ModalBackdrop = styled.div`
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+
+    display: grid;
+    place-items: center;
+    padding: 18px;
+
+    background: rgba(31, 42, 36, 0.42);
+`;
+
+export const ModalCard = styled.div`
+    width: min(680px, 100%);
+    max-height: calc(100vh - 36px);
+    overflow: auto;
+    padding: 22px;
+
+    background: #ffffff;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 24px;
+    box-shadow: 0 24px 70px rgba(31, 42, 36, 0.24);
+
+    form {
+        display: grid;
+        gap: 14px;
+    }
+`;
+
+export const ModalHeader = styled.div`
+    margin-bottom: 18px;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+
+    h2 {
+        color: var(--text, #1f2a24);
+        font-size: 24px;
+        font-weight: 950;
+    }
+
+    p {
+        margin-top: 6px;
+        color: var(--muted, #6f7a73);
+        font-size: 13px;
+        font-weight: 800;
+    }
+`;
+
+export const ModalGrid = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+
+    @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+export const ModalSelect = styled.select`
+    width: 100%;
+    height: 50px;
+    padding: 0 15px;
+
+    color: var(--text, #1f2a24);
+    background: #fbfaf7;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 16px;
+    outline: none;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    &:focus {
+        background: #ffffff;
+        border-color: rgba(63, 111, 88, 0.58);
+        box-shadow: 0 0 0 4px rgba(63, 111, 88, 0.11);
+    }
+`;
+
+export const ModalError = styled.p`
+    color: var(--danger, #d45b5b);
+    font-size: 13px;
+    font-weight: 900;
+`;
+
+export const ModalActions = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    @media (max-width: 520px) {
+        flex-direction: column;
+    }
+`;
