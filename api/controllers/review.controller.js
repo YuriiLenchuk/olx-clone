@@ -50,6 +50,10 @@ const getUserReviews = async (req, res) => {
                 targetUser: userId,
             })
                 .populate({
+                    path: 'targetUser',
+                    select: '-_id -password -roles -__v',
+                })
+                .populate({
                     path: 'author',
                     select: 'username firstName lastName avatar',
                 })
@@ -235,9 +239,48 @@ const deleteReview = async (req, res) => {
     }
 };
 
+const getMyReviews = async (req, res) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const [reviews, totalReviews] = await Promise.all([
+            Review.find({ author: req.user.id })
+                .populate({
+                    path: 'targetUser',
+                    select: 'username firstName lastName avatar',
+                })
+                .populate({
+                    path: 'item',
+                    select: 'name img price',
+                })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+
+            Review.countDocuments({ author: req.user.id }),
+        ]);
+
+        return res.status(200).json({
+            reviews,
+            page,
+            limit,
+            totalReviews,
+            totalPages: Math.ceil(totalReviews / limit),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Помилка при отриманні ваших відгуків',
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
     getUserReviews,
     createReview,
     updateReview,
     deleteReview,
+    getMyReviews: getMyReviews,
 };

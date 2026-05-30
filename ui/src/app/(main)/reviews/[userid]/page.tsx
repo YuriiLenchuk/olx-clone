@@ -73,15 +73,15 @@ export default function ReviewsPage() {
 
         loadReviews();
     }, [userId]);
-    console.log(reviews);
 
     return (
         <Page>
             <PageContainer>
                 <Header>
                     <div>
-                        <span>Репутація користувача {reviews[0].targetUser.firstName + ' ' + reviews[0].targetUser.lastName}</span>
-                        <h1>Відгуки</h1>
+
+                        <span>Репутація користувача</span>
+                        <h1>{!isLoading && !error && reviews.length > 0 &&  reviews[0].targetUser.firstName + ' ' + reviews[0].targetUser.lastName}</h1>
                     </div>
 
                     <BackButton type="button" onClick={() => router.back()}>

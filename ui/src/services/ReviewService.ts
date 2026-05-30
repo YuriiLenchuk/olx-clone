@@ -19,7 +19,7 @@ export interface ReviewItem {
 
 export interface Review {
     _id: string;
-    targetUser: AuthUser;
+    targetUser: string | AuthUser;
     author: ReviewAuthor;
     item?: ReviewItem | null;
     rating: number;
@@ -109,6 +109,28 @@ class ReviewService {
                     Authorization: `Bearer ${token}`,
                 },
             });
+        } catch (e: any) {
+            console.log(e, 'error');
+            throw new ErrorHandler(e?.response?.data);
+        }
+    };
+
+    static getMyReviews = async (
+        token: string,
+        page: number = 1,
+        limit: number = 20,
+    ): Promise<ReviewsResponse> => {
+        try {
+            const response = await api.get(
+                `/reviews/my?page=${page}&limit=${limit}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            return response.data;
         } catch (e: any) {
             console.log(e, 'error');
             throw new ErrorHandler(e?.response?.data);

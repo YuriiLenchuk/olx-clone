@@ -8,9 +8,12 @@ const {
     createReview,
     updateReview,
     deleteReview,
+    getMyReviews,
 } = require('../controllers/review.controller');
 
 const router = express.Router();
+
+router.get('/my', authMiddleware, getMyReviews);
 
 router.get('/user/:userId', getUserReviews);
 

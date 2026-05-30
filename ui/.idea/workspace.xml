@@ -5,9 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="62621f5a-b3d4-44d2-ab93-1184b86497f3" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../api/controllers/review.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/controllers/review.controller.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../api/routes/review.js" beforeDir="false" afterPath="$PROJECT_DIR$/../api/routes/review.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(main)/auth/me/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/auth/me/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(main)/auth/me/styled.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/auth/me/styled.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(main)/reviews/[userid]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(main)/reviews/[userid]/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/services/ReviewService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/ReviewService.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -127,7 +129,7 @@
       <workItem from="1779920411209" duration="1086000" />
       <workItem from="1780060497290" duration="679000" />
       <workItem from="1780062699042" duration="5610000" />
-      <workItem from="1780097272435" duration="19264000" />
+      <workItem from="1780097272435" duration="20543000" />
     </task>
     <servers />
   </component>

@@ -49,8 +49,9 @@ import {
     TextArea, StatCardLink,
 } from './styled';
 import { getValidAuthToken, removeAuthToken } from '@/Utils/authToken';
+import ReviewService, { Review } from '@/services/ReviewService';
 
-type TabId = 'overview' | 'items' | 'chats' | 'transactions' | 'sales' | 'settings';
+type TabId = 'overview' | 'items' | 'chats' | 'transactions' | 'sales' | 'reviews' | 'settings';
 
 type ProfileForm = {
     email: string;
@@ -95,6 +96,7 @@ const tabs: Array<{ id: TabId; label: string }> = [
     { id: 'chats', label: 'Чати' },
     { id: 'transactions', label: 'Транзакції' },
     { id: 'sales', label: 'Продаж' },
+    { id: 'reviews', label: 'Мої відгуки' },
     { id: 'settings', label: 'Налаштування' },
 ];
 
@@ -322,6 +324,15 @@ export default function ProfilePage() {
     const profileUserId = user?._id || user?.id || currentUserId;
     const profileReviewsHref = profileUserId ? `/reviews/${profileUserId}` : '#';
 
+    const [myReviews, setMyReviews] = useState<Review[]>([]);
+    const [editingReview, setEditingReview] = useState<Review | null>(null);
+    const [reviewEditForm, setReviewEditForm] = useState({
+        rating: '5',
+        comment: '',
+    });
+    const [isReviewActionLoading, setIsReviewActionLoading] = useState(false);
+    const [reviewActionError, setReviewActionError] = useState('');
+
     useEffect(() => {
         let isMounted = true;
 
@@ -361,12 +372,20 @@ export default function ProfilePage() {
                     chatsResult,
                     purchasesResult,
                     salesResult,
+                    reviewsResult,
                 ] = await Promise.allSettled([
                     ItemService.getMyItems(actualToken),
                     ChatService.getMyChats(actualToken),
                     PaymentService.getMyPayments(actualToken),
                     PaymentService.getMySalesPayments(actualToken),
+                    ReviewService.getMyReviews(actualToken),
                 ]);
+
+                if (reviewsResult.status === 'fulfilled') {
+                    setMyReviews(reviewsResult.value.reviews || []);
+                } else {
+                    setMyReviews([]);
+                }
 
                 if (!isMounted) return;
 
@@ -512,6 +531,66 @@ export default function ProfilePage() {
             setMessage('Пароль оновлено');
         } catch (e: any) {
             setError(getErrorMessage(e, 'Не вдалося оновити пароль'));
+        }
+    }
+
+    function getReviewTargetName(review: Review) {
+        if (!review.targetUser || typeof review.targetUser === 'string') {
+            return 'Користувач';
+        }
+
+        return getUserName(review.targetUser);
+    }
+
+    function openReviewEditModal(review: Review) {
+        setEditingReview(review);
+        setReviewEditForm({
+            rating: String(review.rating || 5),
+            comment: review.comment || '',
+        });
+        setReviewActionError('');
+    }
+
+    function closeReviewEditModal() {
+        if (isReviewActionLoading) return;
+
+        setEditingReview(null);
+        setReviewActionError('');
+    }
+
+    async function handleReviewEditSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!editingReview) return;
+
+        const rating = Number(reviewEditForm.rating);
+
+        if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+            setReviewActionError('Оцінка має бути від 1 до 5');
+            return;
+        }
+
+        try {
+            setIsReviewActionLoading(true);
+            setReviewActionError('');
+
+            const updatedReview = await ReviewService.updateReview(token, editingReview._id, {
+                rating,
+                comment: reviewEditForm.comment.trim(),
+            });
+
+            setMyReviews((prev) =>
+                prev.map((review) =>
+                    review._id === updatedReview._id ? updatedReview : review,
+                ),
+            );
+
+            setMessage('Відгук оновлено');
+            closeReviewEditModal();
+        } catch (e: any) {
+            setReviewActionError(e?.message || 'Не вдалося оновити відгук');
+        } finally {
+            setIsReviewActionLoading(false);
         }
     }
 
@@ -985,6 +1064,42 @@ export default function ProfilePage() {
                         </Section>
                     )}
 
+                    {activeTab === 'reviews' && (
+                        <Section>
+                            <InfoCard>
+                                <h2>Мої відгуки</h2>
+
+                                {myReviews.length === 0 ? (
+                                    <EmptyState>Ви ще не залишали відгуків.</EmptyState>
+                                ) : (
+                                    <List>
+                                        {myReviews.map((review) => (
+                                            <ItemCard key={review._id}>
+                                                <div>
+                                                    <strong>{getReviewTargetName(review)}</strong>
+                                                    <span>
+                                    Оцінка: {review.rating}/5
+                                                        {review.item?.name ? ` · ${review.item.name}` : ''}
+                                </span>
+                                                    {review.comment && <span>{review.comment}</span>}
+                                                </div>
+
+                                                <Actions>
+                                                    <SmallButton
+                                                        type="button"
+                                                        onClick={() => openReviewEditModal(review)}
+                                                    >
+                                                        Редагувати
+                                                    </SmallButton>
+                                                </Actions>
+                                            </ItemCard>
+                                        ))}
+                                    </List>
+                                )}
+                            </InfoCard>
+                        </Section>
+                    )}
+
                     {activeTab === 'settings' && (
                         <Section>
                             <InfoCard>
@@ -1268,6 +1383,69 @@ export default function ProfilePage() {
                     setMessage('Відгук додано');
                 }}
             />
+            {editingReview && (
+                <ModalBackdrop>
+                    <ModalCard>
+                        <ModalHeader>
+                            <div>
+                                <h2>Редагувати відгук</h2>
+                                <p>{getReviewTargetName(editingReview)}</p>
+                            </div>
+
+                            <SmallButton type="button" onClick={closeReviewEditModal}>
+                                Закрити
+                            </SmallButton>
+                        </ModalHeader>
+
+                        <form onSubmit={handleReviewEditSubmit}>
+                            <Field>
+                                <label>Оцінка</label>
+                                <ModalSelect
+                                    value={reviewEditForm.rating}
+                                    onChange={(event) =>
+                                        setReviewEditForm((prev) => ({
+                                            ...prev,
+                                            rating: event.target.value,
+                                        }))
+                                    }
+                                >
+                                    {[1, 2, 3, 4, 5].map((rating) => (
+                                        <option key={rating} value={rating}>
+                                            {rating}
+                                        </option>
+                                    ))}
+                                </ModalSelect>
+                            </Field>
+
+                            <Field>
+                                <label>Коментар</label>
+                                <TextArea
+                                    value={reviewEditForm.comment}
+                                    maxLength={500}
+                                    onChange={(event) =>
+                                        setReviewEditForm((prev) => ({
+                                            ...prev,
+                                            comment: event.target.value,
+                                        }))
+                                    }
+                                />
+                            </Field>
+
+                            {reviewActionError && <ModalError>{reviewActionError}</ModalError>}
+
+                            <ModalActions>
+                                <SmallButton type="button" onClick={closeReviewEditModal}>
+                                    Скасувати
+                                </SmallButton>
+
+                                <PrimaryButton type="submit" disabled={isReviewActionLoading}>
+                                    {isReviewActionLoading ? 'Збереження...' : 'Зберегти'}
+                                </PrimaryButton>
+                            </ModalActions>
+                        </form>
+                    </ModalCard>
+                </ModalBackdrop>
+            )}
         </Page>
     );
 }
