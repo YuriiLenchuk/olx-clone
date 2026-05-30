@@ -1,12 +1,13 @@
 'use client';
 
-import {useCallback, useEffect, useState} from 'react';
-import {usePathname, useRouter} from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 
 import UserService, { AuthUser } from '@/services/UserService';
 import {
     AUTH_TOKEN_EVENT,
     getAuthToken,
+    getValidAuthToken,
     removeAuthToken,
 } from '@/Utils/authToken';
 
@@ -44,8 +45,11 @@ export default function Header() {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isAuthChecked, setIsAuthChecked] = useState(false);
 
+    const isLoadingUserRef = useRef(false);
+    const requestIdRef = useRef(0);
+
     const loadUser = useCallback(async () => {
-        const token = getAuthToken();
+        const token = getValidAuthToken();
 
         if (!token) {
             setUser(null);
@@ -53,17 +57,35 @@ export default function Header() {
             return;
         }
 
+        if (isLoadingUserRef.current) return;
+
+        const requestId = requestIdRef.current + 1;
+
+        requestIdRef.current = requestId;
+        isLoadingUserRef.current = true;
+
         try {
             setIsAuthChecked(false);
 
             const userData = await UserService.me(token);
 
-            setUser(userData);
+            if (requestIdRef.current === requestId) {
+                setUser(userData);
+            }
         } catch {
-            setUser(null);
-            removeAuthToken();
+            if (getAuthToken() === token) {
+                removeAuthToken();
+            }
+
+            if (requestIdRef.current === requestId) {
+                setUser(null);
+            }
         } finally {
-            setIsAuthChecked(true);
+            if (requestIdRef.current === requestId) {
+                setIsAuthChecked(true);
+            }
+
+            isLoadingUserRef.current = false;
         }
     }, []);
 

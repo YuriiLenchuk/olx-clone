@@ -234,6 +234,7 @@ export const Price = styled.p`
 export const InfoGrid = styled.div`
     display: grid;
     gap: 10px;
+    margin-bottom: 20px;
 `;
 
 export const MetaItem = styled.div`
@@ -264,7 +265,7 @@ export const MetaItem = styled.div`
 export const LikeButton = styled.button<{ $active?: boolean }>`
     width: 100%;
     height: 50px;
-    margin-top: 20px;
+    margin-top: 10px;
     padding: 0 18px;
 
     display: flex;
@@ -507,17 +508,254 @@ export const BackButton = styled.button`
     cursor: pointer;
 `;
 
-export const ActionButton = styled.button`
-    height: 48px;
+
+export const ReportButton = styled.button`
+    width: 100%;
+    min-height: 46px;
     padding: 0 18px;
 
-    color: #ffffff;
-    background: var(--primary, #3f6f58);
-    border: 0;
+    color: #9b2f2f;
+    background: #fff5f5;
+    border: 1px solid rgba(212, 91, 91, 0.28);
     border-radius: 16px;
 
     font-size: 14px;
     font-weight: 900;
 
     cursor: pointer;
+    transition: 0.16s ease;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        border-color: rgba(212, 91, 91, 0.48);
+        box-shadow: 0 14px 30px rgba(35, 45, 39, 0.08);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+`;
+
+export const ReportStatus = styled.p`
+    margin-top: 8px;
+
+    color: var(--muted, #6f7a73);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.4;
+`;
+
+export const ModalBackdrop = styled.div`
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+
+    display: grid;
+    place-items: center;
+    padding: 18px;
+
+    background: rgba(31, 42, 36, 0.42);
+`;
+
+export const ModalCard = styled.div`
+    width: min(520px, 100%);
+    padding: 20px;
+
+    background: #ffffff;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 20px;
+    box-shadow: 0 24px 70px rgba(31, 42, 36, 0.24);
+`;
+
+export const ModalHeader = styled.div`
+    margin-bottom: 18px;
+
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+
+    h2 {
+        margin: 0;
+
+        color: var(--text, #1f2a24);
+        font-size: 22px;
+        font-weight: 950;
+        letter-spacing: -0.03em;
+    }
+
+    p {
+        margin-top: 6px;
+
+        color: var(--muted, #6f7a73);
+        font-size: 13px;
+        font-weight: 700;
+    }
+`;
+
+export const ModalText = styled.p`
+    margin: 14px 0 8px;
+
+    color: var(--text, #1f2a24);
+    font-size: 13px;
+    font-weight: 900;
+`;
+
+export const ReportOptions = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+`;
+
+export const ReportOption = styled.button<{ $active?: boolean }>`
+    min-height: 38px;
+    padding: 0 12px;
+
+    color: ${({ $active }) => ($active ? '#ffffff' : 'var(--text, #1f2a24)')};
+    background: ${({ $active }) => ($active ? 'var(--primary, #3f6f58)' : '#f8f5ef')};
+    border: 1px solid ${({ $active }) => ($active ? 'var(--primary, #3f6f58)' : 'var(--border, #e8e1d6)')};
+    border-radius: 999px;
+
+    font-size: 13px;
+    font-weight: 900;
+`;
+
+export const ReportTextarea = styled.textarea`
+    width: 100%;
+    min-height: 118px;
+    resize: vertical;
+    padding: 12px 14px;
+
+    color: var(--text, #1f2a24);
+    background: #f8f5ef;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 14px;
+
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.5;
+
+    outline: none;
+
+    &:focus {
+        border-color: var(--primary, #3f6f58);
+        box-shadow: 0 0 0 3px rgba(63, 111, 88, 0.12);
+    }
+`;
+
+export const ModalError = styled.p`
+    margin-top: 10px;
+
+    color: #9b2f2f;
+    font-size: 13px;
+    font-weight: 900;
+`;
+
+export const ReportFormActions = styled.div`
+    margin-top: 16px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+
+    @media (max-width: 520px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+export const SecondaryButton = styled.button`
+    min-height: 46px;
+    padding: 0 18px;
+
+    color: var(--text, #1f2a24);
+    background: #f8f5ef;
+    border: 1px solid var(--border, #e8e1d6);
+    border-radius: 14px;
+
+    font-size: 14px;
+    font-weight: 900;
+
+    transition: 0.16s ease;
+
+    &:hover {
+        border-color: rgba(63, 111, 88, 0.32);
+    }
+`;
+
+export const InfoCardTop = styled.div`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+`;
+
+export const ReportIconButton = styled.button`
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+
+    display: grid;
+    place-items: center;
+
+    color: #9b2f2f;
+    background: #fff5f5;
+    border: 1px solid rgba(212, 91, 91, 0.28);
+    border-radius: 999px;
+
+    font-size: 18px;
+    font-weight: 950;
+    line-height: 1;
+
+    cursor: pointer;
+    transition: 0.16s ease;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        border-color: rgba(212, 91, 91, 0.48);
+        box-shadow: 0 12px 24px rgba(35, 45, 39, 0.08);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
+`;
+
+export const PageAlert = styled.div`
+    margin: -4px 0 18px;
+    padding: 14px 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+
+    color: #7a4a11;
+    background: #fff7df;
+    border: 1px solid rgba(242, 189, 87, 0.56);
+    border-radius: 16px;
+
+    strong {
+        color: #5f3909;
+        font-size: 14px;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    span {
+        color: #7a4a11;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.4;
+        text-align: right;
+    }
+
+    @media (max-width: 640px) {
+        align-items: flex-start;
+        flex-direction: column;
+
+        span {
+            text-align: left;
+        }
+    }
 `;

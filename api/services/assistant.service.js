@@ -1,6 +1,6 @@
 const Item = require('../models/item_model');
 
-const DEFAULT_MODEL = 'gemini-3.5-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 let geminiClient = null;
 
@@ -39,22 +39,6 @@ const STOP_WORDS = new Set([
     'бу',
 ]);
 
-const WEB_SEARCH_HINTS = [
-    'в інтернеті',
-    'google',
-    'гугл',
-    'актуальн',
-    'новин',
-    'характеристик',
-    'відгук',
-    'огляд',
-    'порівняй',
-    'порівняти',
-    'чи варто',
-    'ринкова ціна',
-    'скільки коштує новий',
-];
-
 const escapeRegExp = value => {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
@@ -90,12 +74,23 @@ const parseMaxPrice = message => {
     return Number.isFinite(price) && price > 0 ? price : null;
 };
 
-const shouldUseWebSearch = message => {
-    if (process.env.GEMINI_ENABLE_GOOGLE_SEARCH !== 'true') return false;
+const shouldUseWebSearch = () => {
+    return process.env.GEMINI_ENABLE_GOOGLE_SEARCH === 'true';
+};
 
-    const normalizedMessage = String(message || '').toLowerCase();
+const extractItemIdsFromMessage = message => {
+    const ids = new Set();
+    const text = String(message || '');
 
-    return WEB_SEARCH_HINTS.some(hint => normalizedMessage.includes(hint));
+    for (const match of text.matchAll(/\/obyava\/([a-zA-Z0-9_-]+)/g)) {
+        ids.add(match[1]);
+    }
+
+    for (const match of text.matchAll(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi)) {
+        ids.add(match[0]);
+    }
+
+    return Array.from(ids).slice(0, 6);
 };
 
 const getGeminiClient = async () => {
@@ -128,13 +123,42 @@ const toAssistantItem = item => {
         condition: item.isNewState ? 'Новий' : 'Вживаний',
         category: item.categoryData?.category || '',
         subcategory: item.categoryData?.subcategory || '',
-        description: trimText(item.description, 260),
+        description: trimText(item.description, 600),
         image: Array.isArray(item.img) ? item.img[0] || null : null,
         url: `/obyava/${id}`,
     };
 };
 
+const findExplicitItems = async ids => {
+    if (!ids.length) return [];
+
+    const items = await Item.find({
+        _id: { $in: ids },
+        isArchived: { $ne: true },
+    })
+        .select('name img description price isNewState location categoryData date')
+        .lean();
+
+    const itemsById = new Map(items.map(item => [String(item._id), item]));
+
+    return ids
+        .map(id => itemsById.get(String(id)))
+        .filter(Boolean)
+        .map(toAssistantItem);
+};
+
 const findRelevantItems = async message => {
+    const explicitIds = extractItemIdsFromMessage(message);
+    const explicitItems = await findExplicitItems(explicitIds);
+
+    if (explicitItems.length) {
+        return {
+            items: explicitItems,
+            wasFallback: false,
+            isExplicitSelection: true,
+        };
+    }
+
     const tokens = tokenize(message);
     const maxPrice = parseMaxPrice(message);
 
@@ -181,6 +205,7 @@ const findRelevantItems = async message => {
     return {
         items: items.map(toAssistantItem),
         wasFallback,
+        isExplicitSelection: false,
     };
 };
 
@@ -216,30 +241,41 @@ const buildCatalogText = items => {
         .join('\n\n');
 };
 
-const buildPrompt = ({ message, history, items, wasFallback, useGoogleSearch }) => {
+const buildPrompt = ({ message, history, items, wasFallback, isExplicitSelection, useGoogleSearch }) => {
     return `
 Ти AI-консультант маркетплейсу Local Market.
 
 Твоє завдання:
 - відповідати українською;
-- допомагати користувачу знайти товар;
+- допомагати користувачу знайти або порівняти товари;
 - радити тільки товари зі списку "Доступні товари";
-- не вигадувати id, url, ціни, міста або характеристики товарів;
-- якщо точних товарів немає, чесно скажи це і запропонуй найближчі варіанти;
-- якщо користувач питає про актуальні характеристики, ринкову ціну або зовнішню інформацію, ${useGoogleSearch ? 'можеш використати Google Search.' : 'скажи, що можеш орієнтуватися лише на товари з сайту.'}
+- не вигадувати id, url, ціни, міста або характеристики оголошень;
+- якщо є кілька конкретних оголошень, зроби детальне порівняння;
+- якщо використовуєш інтернет, чітко відділяй зовнішню інформацію від даних оголошень;
+- якщо зовнішня інформація суперечить опису оголошення, попередь користувача;
+- не кажи, що товар точно якісний, якщо це не випливає з опису.
+
+Стиль відповіді:
+- дай більше аргументації, ніж коротку рекомендацію;
+- порівнюй за ціною, станом, містом, описом, потенційними ризиками, перевагами і кому який товар краще підійде;
+- в кінці дай чітку фінальну рекомендацію;
+- якщо користувач уточнив критерій, сфокусуйся саме на ньому.
+
+Інтернет:
+${useGoogleSearch ? 'Google Search доступний. Використовуй його для актуальних характеристик, середніх цін, відгуків, ризиків моделей і загального контексту.' : 'Google Search вимкнений. Орієнтуйся тільки на товари з сайту.'}
 
 Формат відповіді:
-Поверни тільки валідний JSON без markdown.
+Поверни тільки валідний JSON без markdown-блоку.
 
 JSON-схема:
 {
-  "answer": "коротка корисна відповідь для користувача",
+  "answer": "розгорнута відповідь для користувача",
   "items": [
     {
       "id": "id товару зі списку",
       "title": "назва товару",
       "url": "/obyava/id",
-      "reason": "чому цей товар підходить"
+      "reason": "чому цей товар вартий уваги"
     }
   ]
 }
@@ -248,6 +284,7 @@ JSON-схема:
 ${buildHistoryText(history)}
 
 Доступні товари:
+${isExplicitSelection ? 'Користувач явно вибрав ці оголошення для аналізу або порівняння.\n' : ''}
 ${wasFallback ? 'Точних збігів не знайдено, нижче останні доступні товари.\n' : ''}
 ${buildCatalogText(items)}
 
@@ -286,14 +323,14 @@ const normalizeAssistantItems = (itemsFromModel, catalogItems) => {
                 id,
                 title: catalogItem.title,
                 url: catalogItem.url,
-                reason: trimText(item?.reason || 'Підходить під ваш запит.', 160),
+                reason: trimText(item?.reason || 'Вартий уваги у межах цього запиту.', 220),
                 price: catalogItem.price,
                 location: catalogItem.location,
                 image: catalogItem.image,
             };
         })
         .filter(Boolean)
-        .slice(0, 4);
+        .slice(0, 6);
 };
 
 const getFallbackAnswer = catalogItems => {
@@ -305,8 +342,8 @@ const getFallbackAnswer = catalogItems => {
     }
 
     return {
-        answer: 'Я знайшов кілька доступних товарів, які можуть підійти. Можеш відкрити деталі будь-якого з них.',
-        items: catalogItems.slice(0, 3).map(item => ({
+        answer: 'Я знайшов кілька доступних товарів. Можеш відкрити їхні сторінки або попросити мене порівняти їх детальніше.',
+        items: catalogItems.slice(0, 4).map(item => ({
             id: item.id,
             title: item.title,
             url: item.url,
@@ -341,11 +378,11 @@ const getGrounding = response => {
 };
 
 const askMarketplaceAssistant = async ({ message, history = [] }) => {
-    const { items, wasFallback } = await findRelevantItems(message);
+    const { items, wasFallback, isExplicitSelection } = await findRelevantItems(message);
 
     if (!items.length) {
         return {
-            answer: 'Зараз у каталозі немає доступних товарів, які я можу порекомендувати.',
+            answer: 'Я не знайшов доступних оголошень для цього запиту. Можна спробувати інші ключові слова або відкрити конкретні товари й додати їх до порівняння.',
             items: [],
             grounding: {
                 usedWeb: false,
@@ -357,7 +394,7 @@ const askMarketplaceAssistant = async ({ message, history = [] }) => {
     }
 
     const ai = await getGeminiClient();
-    const useGoogleSearch = shouldUseWebSearch(message);
+    const useGoogleSearch = shouldUseWebSearch();
 
     const response = await ai.models.generateContent({
         model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
@@ -366,17 +403,18 @@ const askMarketplaceAssistant = async ({ message, history = [] }) => {
             history,
             items,
             wasFallback,
+            isExplicitSelection,
             useGoogleSearch,
         }),
         config: {
-            temperature: 0.35,
+            temperature: 0.25,
             ...(useGoogleSearch ? { tools: [{ googleSearch: {} }] } : {}),
         },
     });
 
     const parsed = extractJson(response.text);
     const fallback = getFallbackAnswer(items);
-    const answer = trimText(parsed?.answer || response.text || fallback.answer, 1200);
+    const answer = trimText(parsed?.answer || response.text || fallback.answer, 2600);
     const assistantItems = normalizeAssistantItems(parsed?.items, items);
 
     return {

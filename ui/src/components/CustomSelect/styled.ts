@@ -2,14 +2,12 @@
 
 import styled from 'styled-components';
 
-
 const Wrapper = styled.div`
     font-family: inherit;
     position: relative;
 `;
 
-
-const Selected = styled.div<{ open: boolean }>`
+const Selected = styled.div`
     padding: 0 16px;
     height: 48px;
     min-width: 250px;
@@ -27,14 +25,14 @@ const Selected = styled.div<{ open: boolean }>`
 
 const SelectedItem = styled.div`
     align-self: center;
-`
+`;
 
-const Arrow = styled.span<{ rotated: boolean }>`
+const Arrow = styled.span<{ $rotated: boolean }>`
     pointer-events: none;
     position: absolute;
     right: 12px;
     top: 50%;
-    transform: translateY(-50%) rotate(${props => (props.rotated ? '180deg' : '0deg')});
+    transform: translateY(-50%) rotate(${props => (props.$rotated ? '180deg' : '0deg')});
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -43,7 +41,6 @@ const Arrow = styled.span<{ rotated: boolean }>`
     color: var(--primary);
     transition: transform 0.2s ease;
 `;
-
 
 const OptionsList = styled.ul`
     position: absolute;
@@ -62,7 +59,6 @@ const OptionsList = styled.ul`
     z-index: 10;
 `;
 
-
 const OptionItem = styled.li`
     padding: 16px;
     cursor: pointer;
@@ -71,7 +67,6 @@ const OptionItem = styled.li`
     align-items: center;
     display: flex;
     justify-content: space-between;
-
 
     &:hover {
         background-color: rgb(2, 40, 44);
@@ -86,4 +81,4 @@ export {
     OptionsList,
     OptionItem,
     Arrow,
-}
+};

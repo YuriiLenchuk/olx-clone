@@ -111,10 +111,7 @@ const getItemByCategory = async (req, res) => {
         const { page, limit, sort } = req.query;
 
         const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
-        const normalizedLimit = Math.min(
-            Math.max(parseInt(limit, 10) || 10, 1),
-            100,
-        );
+        const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
         const skip = (normalizedPage - 1) * normalizedLimit;
 
         if (!name) {
@@ -125,10 +122,7 @@ const getItemByCategory = async (req, res) => {
 
         const filter = {
             isArchived: { $ne: true },
-            $or: [
-                { 'categoryData.category': name },
-                { 'categoryData.subcategory': name },
-            ],
+            $or: [{ 'categoryData.category': name }, { 'categoryData.subcategory': name }],
         };
 
         const sortOptions =

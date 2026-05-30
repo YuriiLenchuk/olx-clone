@@ -37,8 +37,34 @@ import {
     ThumbButton,
     Title,
     TopSection,
+    ModalBackdrop,
+    ModalCard,
+    ModalError,
+    ModalHeader,
+    ModalText,
+    ReportButton,
+    ReportFormActions,
+    ReportOption,
+    ReportOptions,
+    ReportStatus,
+    ReportTextarea,
+    SecondaryButton,
+    InfoCardTop,
+    ReportIconButton,
+    PageAlert,
 } from './styled';
 import {getAuthToken} from "@/Utils/authToken";
+import {
+    addCompareItem,
+    ASSISTANT_COMPARE_UPDATED_EVENT,
+    createCompareItemFromItem,
+    getCompareItems, removeCompareItem
+} from "@/Utils/assistantCompare";
+import ReportService, {
+    Report,
+    ReportReason,
+    REPORT_REASON_OPTIONS,
+} from '@/services/ReportService';
 
 const IMAGE_URL = 'http://localhost:3005/img/';
 
@@ -58,6 +84,10 @@ function getFavoriteIds(): string[] {
     }
 }
 
+function isItemInCompare(itemId: string) {
+    return getCompareItems().some((item) => item.id === itemId);
+}
+
 export default function ItemPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
@@ -67,6 +97,13 @@ export default function ItemPage() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isCompareAdded, setIsCompareAdded] = useState(false);
+    const [report, setReport] = useState<Report | null>(null);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [reportReason, setReportReason] = useState<ReportReason>('fraud');
+    const [reportComment, setReportComment] = useState('');
+    const [isReportSubmitting, setIsReportSubmitting] = useState(false);
+    const [reportError, setReportError] = useState('');
 
     const images = useMemo(() => item?.img?.filter(Boolean) ?? [], [item]);
 
@@ -81,6 +118,22 @@ export default function ItemPage() {
                 setItem(itemData);
                 setSelectedImage(itemData.img?.[0] || '');
                 setIsFavorite(getFavoriteIds().includes(itemData._id));
+                const token = getAuthToken();
+
+                if (token) {
+                    try {
+                        const existingReport = await ReportService.getMyReportForItem(
+                            token,
+                            itemData._id,
+                        );
+
+                        setReport(existingReport);
+                    } catch {
+                        setReport(null);
+                    }
+                }
+
+                setIsCompareAdded(isItemInCompare(itemData._id));
             } catch (e) {
                 setError('Не вдалося завантажити оголошення');
             } finally {
@@ -92,6 +145,22 @@ export default function ItemPage() {
             loadItem();
         }
     }, [params.id]);
+
+    useEffect(() => {
+        if (!item) return;
+
+        function syncCompareState() {
+            setIsCompareAdded(isItemInCompare(item!._id));
+        }
+
+        window.addEventListener(ASSISTANT_COMPARE_UPDATED_EVENT, syncCompareState);
+        window.addEventListener('storage', syncCompareState);
+
+        return () => {
+            window.removeEventListener(ASSISTANT_COMPARE_UPDATED_EVENT, syncCompareState);
+            window.removeEventListener('storage', syncCompareState);
+        };
+    }, [item]);
 
     function toggleFavorite() {
         if (!item) return;
@@ -109,6 +178,19 @@ export default function ItemPage() {
         favoriteIds.push(item._id);
         Cookies.set('checked', JSON.stringify(favoriteIds));
         setIsFavorite(true);
+    }
+
+    function toggleCompare() {
+        if (!item) return;
+
+        if (isCompareAdded) {
+            removeCompareItem(item._id);
+            setIsCompareAdded(false);
+            return;
+        }
+
+        addCompareItem(createCompareItemFromItem(item));
+        setIsCompareAdded(true);
     }
 
     function handleBuy() {
@@ -140,6 +222,62 @@ export default function ItemPage() {
             router.push(`/chats/${chat._id}`);
         } catch (e: any) {
             alert(e?.message || 'Не вдалося створити чат із продавцем');
+        }
+    }
+
+    function openReportModal() {
+        if (!item) return;
+
+        const token = getAuthToken();
+
+        if (!token) {
+            router.push('/registration');
+            return;
+        }
+
+        if (report) return;
+
+        setReportError('');
+        setIsReportModalOpen(true);
+    }
+
+    function closeReportModal() {
+        if (isReportSubmitting) return;
+
+        setIsReportModalOpen(false);
+        setReportError('');
+        setReportComment('');
+        setReportReason('fraud');
+    }
+
+    async function handleReportSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!item) return;
+
+        const token = getAuthToken();
+
+        if (!token) {
+            router.push('/registration');
+            return;
+        }
+
+        try {
+            setIsReportSubmitting(true);
+            setReportError('');
+
+            const createdReport = await ReportService.createReport(token, {
+                itemId: item._id,
+                reason: reportReason,
+                comment: reportComment,
+            });
+
+            setReport(createdReport);
+            closeReportModal();
+        } catch (e: any) {
+            setReportError(e?.message || 'Не вдалося відправити скаргу');
+        } finally {
+            setIsReportSubmitting(false);
         }
     }
 
@@ -186,6 +324,15 @@ export default function ItemPage() {
                     )}
                 </Breadcrumbs>
 
+                {report && (
+                    <PageAlert>
+                        <strong>Скаргу відправлено</strong>
+                        <span>
+                            Вона вже передана адміністраторам. Статус: {report.status}
+                        </span>
+                    </PageAlert>
+                )}
+
                 <TopSection>
                     <GalleryCard>
                         {selectedImage ? (
@@ -215,7 +362,19 @@ export default function ItemPage() {
 
                     <SideColumn>
                         <InfoCard>
-                            <StatusBadge>{item.isNewState ? 'Новий' : 'Б/в'}</StatusBadge>
+                            <InfoCardTop>
+                                <StatusBadge>{item.isNewState ? 'Новий' : 'Б/в'}</StatusBadge>
+
+                                <ReportIconButton
+                                    type="button"
+                                    disabled={Boolean(report)}
+                                    onClick={openReportModal}
+                                    title={report ? 'Скаргу вже відправлено' : 'Поскаржитися'}
+                                    aria-label={report ? 'Скаргу вже відправлено' : 'Поскаржитися'}
+                                >
+                                    !
+                                </ReportIconButton>
+                            </InfoCardTop>
 
                             <Title>{item.name}</Title>
 
@@ -245,6 +404,14 @@ export default function ItemPage() {
                                     checked={isFavorite}
                                 />
                                 {isFavorite ? 'В обраному' : 'Додати в обране'}
+                            </LikeButton>
+
+                            <LikeButton
+                                type="button"
+                                $active={isCompareAdded}
+                                onClick={toggleCompare}
+                            >
+                                {isCompareAdded ? 'У порівнянні' : 'Додати до порівняння'}
                             </LikeButton>
 
                             <BuyButton type="button" onClick={handleBuy}>
@@ -280,6 +447,60 @@ export default function ItemPage() {
                     </DescriptionCard>
                 </DetailsSection>
             </PageContainer>
+            {isReportModalOpen && (
+                <ModalBackdrop>
+                    <ModalCard>
+                        <ModalHeader>
+                            <div>
+                                <h2>Поскаржитися на оголошення</h2>
+                                <p>{item.name}</p>
+                            </div>
+
+                            <SecondaryButton type="button" onClick={closeReportModal}>
+                                Закрити
+                            </SecondaryButton>
+                        </ModalHeader>
+
+                        <form onSubmit={handleReportSubmit}>
+                            <ModalText>Оберіть причину скарги</ModalText>
+
+                            <ReportOptions>
+                                {REPORT_REASON_OPTIONS.map((option) => (
+                                    <ReportOption
+                                        key={option.value}
+                                        type="button"
+                                        $active={reportReason === option.value}
+                                        onClick={() => setReportReason(option.value)}
+                                    >
+                                        {option.label}
+                                    </ReportOption>
+                                ))}
+                            </ReportOptions>
+
+                            <ModalText>Коментар</ModalText>
+
+                            <ReportTextarea
+                                value={reportComment}
+                                onChange={(event) => setReportComment(event.target.value)}
+                                placeholder="Опишіть проблему, якщо потрібно"
+                                maxLength={1000}
+                            />
+
+                            {reportError && <ModalError>{reportError}</ModalError>}
+
+                            <ReportFormActions>
+                                <SecondaryButton type="button" onClick={closeReportModal}>
+                                    Скасувати
+                                </SecondaryButton>
+
+                                <ReportButton type="submit" disabled={isReportSubmitting}>
+                                    {isReportSubmitting ? 'Відправлення...' : 'Відправити скаргу'}
+                                </ReportButton>
+                            </ReportFormActions>
+                        </form>
+                    </ModalCard>
+                </ModalBackdrop>
+            )}
         </Page>
     );
 }

@@ -40,7 +40,7 @@ import {
     TextInput,
     TitleBlock,
 } from './styled';
-import { getAuthToken, removeAuthToken } from '@/Utils/authToken';
+import { getValidAuthToken, removeAuthToken } from '@/Utils/authToken';
 
 type TabId = 'overview' | 'items' | 'chats' | 'transactions' | 'sales' | 'settings';
 
@@ -73,7 +73,7 @@ const tabs: Array<{ id: TabId; label: string }> = [
 ];
 
 function getToken() {
-    return getAuthToken() || '';
+    return getValidAuthToken();
 }
 
 function getErrorMessage(error: any, fallback: string) {
@@ -287,7 +287,7 @@ export default function ProfilePage() {
         let isMounted = true;
 
         async function loadCabinet() {
-            const actualToken = getAuthToken();
+            const actualToken = getValidAuthToken();
 
             if (!actualToken) {
                 router.replace('/registration');
