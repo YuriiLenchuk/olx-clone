@@ -16,6 +16,13 @@ function notifyAuthChanged() {
     }
 }
 
+function clearAuthTokenCookie() {
+    Cookies.remove(AUTH_TOKEN_KEY);
+    Cookies.remove(AUTH_TOKEN_KEY, {
+        path: '/',
+    });
+}
+
 function decodeJwtPayload(token: string): any {
     if (typeof window === 'undefined') return null;
 
@@ -56,7 +63,7 @@ export function getValidAuthToken() {
     if (!token) return '';
 
     if (isAuthTokenExpired(token)) {
-        removeAuthToken();
+        clearAuthTokenCookie();
         return '';
     }
 
@@ -76,12 +83,9 @@ export function setAuthToken(token: string) {
 export function removeAuthToken() {
     const currentToken = getAuthToken();
 
-    if (!currentToken) return;
+    clearAuthTokenCookie();
 
-    Cookies.remove(AUTH_TOKEN_KEY);
-    Cookies.remove(AUTH_TOKEN_KEY, {
-        path: '/',
-    });
+    if (!currentToken) return;
 
     notifyAuthChanged();
 }

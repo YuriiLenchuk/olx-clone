@@ -3,11 +3,23 @@ import type { NextRequest } from 'next/server';
 
 const protectedPrefixes = ['/add', '/chats', '/auth/me', '/payment', '/admin', '/wish-list'];
 
+function decodeJwtPayload(token: string) {
+    const payload = token.split('.')[1];
+
+    if (!payload) return null;
+
+    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const paddedPayload = normalizedPayload.padEnd(
+        normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+        '=',
+    );
+
+    return JSON.parse(atob(paddedPayload));
+}
+
 function isTokenExpired(token: string) {
     try {
-        const payload = JSON.parse(
-            Buffer.from(token.split('.')[1] || '', 'base64').toString(),
-        );
+        const payload = decodeJwtPayload(token);
 
         if (!payload?.exp) return false;
 

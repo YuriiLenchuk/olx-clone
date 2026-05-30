@@ -8,10 +8,10 @@ import PaymentService, {
     Payment,
     PaymentItem,
     PaymentMethod, PaymentResponse,
-    PaymentStatus,
+    PaymentStatus, PaymentUser,
 } from '@/services/PaymentService';
 import { getAuthToken } from '@/Utils/authToken';
-
+const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 import {
     BackButton,
     CardForm,
@@ -36,6 +36,7 @@ import {
     SummaryLine,
     TextInput,
 } from './styled';
+import ReviewModal from "@/components/ReviewModal/ReviewModal";
 
 declare global {
     interface Window {
@@ -60,8 +61,8 @@ interface CheckoutDelivery {
 interface Checkout {
     _id: string;
     item: string | PaymentItem;
-    buyer: string;
-    seller: string;
+    buyer: string | PaymentUser;
+    seller: string | PaymentUser;
     amount: number;
     serviceFee: number;
     totalAmount: number;
@@ -670,6 +671,13 @@ export default function PaymentPage() {
                             <div>
                                 <SecondaryButton
                                     type="button"
+                                    onClick={() => setIsReviewModalOpen(true)}
+                                >
+                                    Залишити відгук продавцю
+                                </SecondaryButton>
+
+                                <SecondaryButton
+                                    type="button"
                                     onClick={() => router.push('/auth/me')}
                                 >
                                     Перейти в особистий кабінет
@@ -748,6 +756,19 @@ export default function PaymentPage() {
                     </SummaryCard>
                 </PaymentGrid>
             </PageContainer>
+            <ReviewModal
+                isOpen={isReviewModalOpen}
+                token={getAuthToken()}
+                targetUserId={typeof checkout.seller === 'string' ? checkout.seller : checkout.seller._id}
+                targetUserName={typeof checkout.seller === 'string' ? 'Продавець' : checkout.seller.username}
+                itemId={item?._id}
+                itemName={item?.name}
+                onClose={() => setIsReviewModalOpen(false)}
+                onSuccess={() => {
+                    setError('');
+                    setSuccess('Відгук додано');
+                }}
+            />
         </Page>
     );
 }

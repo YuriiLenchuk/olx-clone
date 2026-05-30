@@ -290,3 +290,21 @@ export const VariantPanel = styled.div`
         animation: none;
     }
 `;
+
+export const ErrorAlert = styled.div`
+    margin: 2px 0 10px;
+    padding: 10px 12px;
+    
+    position: absolute;
+    left: 40.5%;
+    top: 5%;
+
+    color: var(--danger, #d45b5b);
+    background: #fff5f5;
+    border: 1px solid rgba(212, 91, 91, 0.24);
+    border-radius: 14px;
+
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 850;
+`;

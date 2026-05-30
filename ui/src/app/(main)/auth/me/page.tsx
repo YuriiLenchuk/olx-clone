@@ -9,10 +9,10 @@ import ChatService, { Chat } from '@/services/ChatService';
 import PaymentService, {
     Checkout,
     Payment,
-    PaymentItem,
+    PaymentItem, PaymentUser,
 } from '@/services/PaymentService';
 import { Item } from '@/services/CategoryService';
-
+import ReviewModal from '@/components/ReviewModal/ReviewModal';
 import {
     Actions,
     DangerButton,
@@ -280,7 +280,12 @@ export default function ProfilePage() {
     const [chats, setChats] = useState<Chat[]>([]);
     const [purchasePayments, setPurchasePayments] = useState<Payment[]>([]);
     const [salesPayments, setSalesPayments] = useState<Payment[]>([]);
-
+    const [reviewTarget, setReviewTarget] = useState<{
+        targetUserId: string;
+        targetUserName: string;
+        itemId?: string;
+        itemName?: string;
+    } | null>(null);
     const [profileForm, setProfileForm] = useState<ProfileForm>({
         email: '',
         firstName: '',
@@ -548,6 +553,27 @@ export default function ProfilePage() {
         setIsItemModalOpen(true);
     }
 
+    function getUserId(user: string | PaymentUser) {
+        return typeof user === 'string' ? user : user._id;
+    }
+
+    function getUserName(user?: AuthUser | null) {
+        const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+
+        return fullName || user?.username || 'Користувач';
+    }
+
+    function log(user: AuthUser | null) {
+        console.log(user)
+        return user;
+    }
+
+    function getPaymentUserId(user: Payment['buyer'] | Payment['seller']) {
+        if (!user) return '';
+
+        return typeof user === 'string' ? user : user._id;
+    }
+
     function closeItemEditModal() {
         if (isItemActionLoading) return;
 
@@ -713,13 +739,13 @@ export default function ProfilePage() {
                                 </StatCard>
 
                                 <StatCard>
-                                    <span>Покупки</span>
-                                    <strong>{purchasePayments.length}</strong>
+                                    <span>Кількість відгуків</span>
+                                    <strong>{user?.reviewsCount || 0}</strong>
                                 </StatCard>
 
                                 <StatCard>
-                                    <span>Продажі</span>
-                                    <strong>{salesPayments.length}</strong>
+                                    <span>Середня оцінка</span>
+                                    <strong>{user?.averageRating || 0.0}</strong>
                                 </StatCard>
                             </StatsGrid>
 
@@ -868,6 +894,22 @@ export default function ProfilePage() {
                                                     </div>
 
                                                     <Actions>
+                                                        {payment.status === 'paid_test' && typeof payment.seller !== 'string' && (
+                                                            <SmallButton
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setReviewTarget({
+                                                                        targetUserId: getPaymentUserId(payment.seller),
+                                                                        targetUserName: getPaymentUserName(payment.seller),
+                                                                        itemId: item?._id,
+                                                                        itemName: item?.name,
+                                                                    })
+                                                                }
+                                                            >
+                                                                Відгук
+                                                            </SmallButton>
+                                                        )}
+
                                                         {checkoutId && (
                                                             <SmallButton
                                                                 type="button"
@@ -1211,6 +1253,19 @@ export default function ProfilePage() {
                     </ModalCard>
                 </ModalBackdrop>
             )}
+            <ReviewModal
+                isOpen={Boolean(reviewTarget)}
+                token={token}
+                targetUserId={reviewTarget?.targetUserId || ''}
+                targetUserName={reviewTarget?.targetUserName}
+                itemId={reviewTarget?.itemId}
+                itemName={reviewTarget?.itemName}
+                onClose={() => setReviewTarget(null)}
+                onSuccess={() => {
+                    setError('');
+                    setMessage('Відгук додано');
+                }}
+            />
         </Page>
     );
 }

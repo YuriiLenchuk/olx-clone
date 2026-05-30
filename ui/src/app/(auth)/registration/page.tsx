@@ -4,6 +4,7 @@ import {useEffect, useState} from "react";
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation";
 import {
+    ErrorAlert,
     ForgetPasswordInput,
     FormButton,
     SubmitButton, VariantPanel,
@@ -12,6 +13,7 @@ import {
     WrapperFormContainer,
     WrapperInput
 } from './styled';
+
 import { getValidAuthToken, removeAuthToken, setAuthToken } from "@/Utils/authToken";
 
 type Inputs = {
@@ -21,6 +23,10 @@ type Inputs = {
 interface User {
     user: string,
     password: string,
+}
+
+function getAuthErrorMessage(error: any, fallback: string) {
+    return error?.message || error?.response?.data?.message || fallback;
 }
 
 export default function Auth() {
@@ -53,21 +59,50 @@ export default function Auth() {
 
     const [variant, setVariant] = useState<string>('isLogin');
     const [error, setError] = useState<string | null>(null);
-    const onClick = (data:User) => {
-        switch (variant) {
-            case 'isRegister': UserService.registration({username: data.user, password: data.password}).then(r => {
-                setAuthToken(r.token);
-                return router.push("/auth/me");
-            }); break;
-            case 'isLogin': UserService.login({username: data.user, password: data.password}).then(r => {
-                setAuthToken(r.token);
-                return router.push('/auth/me');
-            }).catch(e => {
-                setError(e?.response?.data)
-            }); break;
+    function getAuthErrorMessage(error: any, fallback: string) {
+        if (typeof error === 'string') return error;
+        if (typeof error?.message === 'string') return error.message;
+        if (typeof error?.response?.data === 'string') return error.response.data;
+        if (typeof error?.response?.data?.message === 'string') {
+            return error.response.data.message;
         }
 
+        return fallback;
     }
+
+    const onClick = async (data: User) => {
+        setError(null);
+
+        try {
+            if (variant === 'isRegister') {
+                const response = await UserService.registration({
+                    username: data.user,
+                    password: data.password,
+                });
+
+                setAuthToken(response.token);
+                router.push('/auth/me');
+                return;
+            }
+
+            const response = await UserService.login({
+                username: data.user,
+                password: data.password,
+            });
+
+            setAuthToken(response.token);
+            router.push('/auth/me');
+        } catch (e: any) {
+            setError(
+                getAuthErrorMessage(
+                    e,
+                    variant === 'isRegister'
+                        ? 'Не вдалося зареєструватися'
+                        : 'Не вдалося увійти',
+                ),
+            );
+        }
+    };
     const {
         register,
         handleSubmit,
@@ -77,6 +112,7 @@ export default function Auth() {
     return (
         variant === "isRegister" ? (
             <Wrapper>
+                {error && <ErrorAlert role="alert">{error}</ErrorAlert>}
                 <VariantPanel key={variant}>
                     <WrapperFormContainer>
                         <div>
@@ -99,7 +135,6 @@ export default function Auth() {
                                     <span><span> - </span>Мінімум одну цифру</span>
                                 </div>
                             </WrapperInput>
-                            {error && <span>This field is required</span>}
                             <div style={{alignSelf: "center", margin: "16px 0 0 0"}}></div>
                             <SubmitButton value="Зареєструватися" type="submit"/>
                         </WrapperForm>
@@ -108,6 +143,7 @@ export default function Auth() {
             </Wrapper>
         ) : (
             <Wrapper>
+                {error && <ErrorAlert role="alert">{error}</ErrorAlert>}
                 <VariantPanel key={variant}>
                     <WrapperFormContainer>
                         <div>
@@ -123,12 +159,11 @@ export default function Auth() {
                                 <label>Пароль</label>
                                 <input type={"password"} {...register("password", {required: true})} />
                             </WrapperInput>
-                            {errors.password && <span>This field is required</span>}
+
                             <div style={{alignSelf: "center", margin: "16px 0 0 0"}}></div>
                             <div>
                                 <ForgetPasswordInput href={"/forgetpassword"}>Забули пароль?</ForgetPasswordInput>
                             </div>
-                            {error && <p role="alert">{error}</p>}
                             <SubmitButton value="Увійти" type="submit"/>
                         </WrapperForm>
                     </WrapperFormContainer>
