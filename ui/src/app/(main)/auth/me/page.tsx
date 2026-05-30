@@ -382,6 +382,7 @@ export default function ProfilePage() {
                 ]);
 
                 if (reviewsResult.status === 'fulfilled') {
+                    console.log(reviewsResult)
                     setMyReviews(reviewsResult.value.reviews || []);
                 } else {
                     setMyReviews([]);
